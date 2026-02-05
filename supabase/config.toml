@@ -1,1 +1,4 @@
 project_id = "hfsblachionqagqxqgxx"
+
+[functions.setup-users]
+verify_jwt = false
