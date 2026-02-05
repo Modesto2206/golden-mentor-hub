@@ -1,5 +1,6 @@
-import { Shield, Users, Building2, Briefcase, Wallet } from "lucide-react";
+import { Shield, Users, Building2, Briefcase, Wallet, BarChart3 } from "lucide-react";
 import CategoryCard from "@/components/CategoryCard";
+import SellerAreaCard from "@/components/SellerAreaCard";
 
 // Configuração das categorias - Atualize os links conforme necessário
 const categories = [
@@ -75,6 +76,12 @@ const Index = () => {
                 link={category.link}
               />
             ))}
+            {/* Card Área do Vendedor - Destaque especial */}
+            <SellerAreaCard
+              title="Área do Vendedor"
+              description="Acesso exclusivo para vendedores e gestão comercial"
+              icon={BarChart3}
+            />
           </div>
         </div>
       </main>
