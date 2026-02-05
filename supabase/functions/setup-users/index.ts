@@ -25,6 +25,12 @@ const initialUsers: SetupUser[] = [
     role: "administrador",
     full_name: "Administrador",
   },
+  {
+    email: "contatonewtcompany@gmail.com",
+    password: "Cred3001",
+    role: "administrador",
+    full_name: "Administrador NewT",
+  },
 ];
 
 Deno.serve(async (req) => {
