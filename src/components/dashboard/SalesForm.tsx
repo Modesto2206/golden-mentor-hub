@@ -2,7 +2,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, DollarSign } from "lucide-react";
+import { CalendarIcon, DollarSign, Percent } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -17,13 +17,12 @@ import { cn } from "@/lib/utils";
 import { CreateSaleData, CovenantType } from "@/hooks/useSales";
 
 const covenantTypes: CovenantType[] = ["INSS", "Forças Armadas", "SIAPE", "CLT", "FGTS", "Outros"];
-const commissionPercentages = [2, 3, 5, 10, 15, 20];
 
 const saleSchema = z.object({
   client_name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
   covenant_type: z.enum(["INSS", "Forças Armadas", "SIAPE", "CLT", "FGTS", "Outros"]),
   released_value: z.coerce.number().positive("Valor deve ser maior que zero"),
-  commission_percentage: z.coerce.number().refine((val) => commissionPercentages.includes(val)),
+  commission_percentage: z.coerce.number().min(0, "Porcentagem deve ser positiva").max(100, "Máximo 100%"),
   sale_date: z.date(),
   observations: z.string().max(1000).optional(),
 });
@@ -43,8 +42,6 @@ const formatCurrency = (value: number) => {
 };
 
 const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
-  const [previewCommission, setPreviewCommission] = useState<number | null>(null);
-
   const form = useForm<SaleFormData>({
     resolver: zodResolver(saleSchema),
     defaultValues: {
@@ -152,21 +149,21 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                 name="commission_percentage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Porcentagem de Comissão</FormLabel>
-                    <Select onValueChange={(val) => field.onChange(Number(val))} defaultValue={String(field.value)}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a %" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {commissionPercentages.map((pct) => (
-                          <SelectItem key={pct} value={String(pct)}>
-                            {pct}%
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Porcentagem de Comissão (%)</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="5.00"
+                          className="pl-10"
+                        />
+                      </div>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

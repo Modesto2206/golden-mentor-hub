@@ -1,6 +1,8 @@
 import { DollarSign, TrendingUp, Target, Users, Percent, PiggyBank } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sale } from "@/hooks/useSales";
+import { useAuth } from "@/contexts/AuthContext";
+import MonthlyGoalModal from "./MonthlyGoalModal";
 
 interface DashboardStatsProps {
   sales: Sale[];
@@ -15,6 +17,7 @@ const formatCurrency = (value: number) => {
 };
 
 const DashboardStats = ({ sales, monthlyGoal = 20000 }: DashboardStatsProps) => {
+  const { isAdmin } = useAuth();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -71,6 +74,7 @@ const DashboardStats = ({ sales, monthlyGoal = 20000 }: DashboardStatsProps) => 
       icon: Target,
       description: formatCurrency(monthlyGoal),
       progress: goalProgress,
+      showEdit: isAdmin,
     },
   ];
 
@@ -79,8 +83,9 @@ const DashboardStats = ({ sales, monthlyGoal = 20000 }: DashboardStatsProps) => 
       {stats.map((stat) => (
         <Card key={stat.title} className="border-border/50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               {stat.title}
+              {stat.showEdit && <MonthlyGoalModal currentGoal={monthlyGoal} />}
             </CardTitle>
             <stat.icon className="h-4 w-4 text-primary" />
           </CardHeader>

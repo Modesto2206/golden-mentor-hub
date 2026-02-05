@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutDashboard, PlusCircle, List, Users } from "lucide-react";
+import { LayoutDashboard, PlusCircle, List } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSales } from "@/hooks/useSales";
+import { useSalesWithProfiles } from "@/hooks/useSalesWithProfiles";
+import { useMonthlyGoal } from "@/hooks/useMonthlyGoal";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardStats from "@/components/dashboard/DashboardStats";
 import SalesForm from "@/components/dashboard/SalesForm";
@@ -12,8 +13,9 @@ import SalesCharts from "@/components/dashboard/SalesCharts";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, role, isLoading: authLoading, isAdmin } = useAuth();
-  const { sales, isLoading, createSale, updateSale, deleteSale, isCreating } = useSales();
+  const { user, role, isLoading: authLoading } = useAuth();
+  const { sales, sellers, isLoading, createSale, updateSale, deleteSale, isCreating } = useSalesWithProfiles();
+  const { monthlyGoal } = useMonthlyGoal();
 
   useEffect(() => {
     if (!authLoading && (!user || !role)) {
@@ -34,7 +36,7 @@ const Dashboard = () => {
       <DashboardHeader />
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <DashboardStats sales={sales} />
+        <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />
 
         <Tabs defaultValue="dashboard" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
@@ -63,6 +65,7 @@ const Dashboard = () => {
           <TabsContent value="sales">
             <SalesTable
               sales={sales}
+              sellers={sellers}
               isLoading={isLoading}
               onUpdateStatus={(id, status) => updateSale({ id, status })}
               onDelete={deleteSale}
