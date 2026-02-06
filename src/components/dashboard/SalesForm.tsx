@@ -63,7 +63,7 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
       client_name: data.client_name,
       covenant_type: data.covenant_type,
       released_value: data.released_value,
-      commission_percentage: data.commission_percentage,
+      commission_percentage: Number((data.commission_percentage / 100).toFixed(4)),
       sale_date: format(data.sale_date, "yyyy-MM-dd"),
       observations: data.observations || undefined,
     };
@@ -129,14 +129,7 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                     <FormControl>
                       <div className="relative">
                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0,00"
-                          className="pl-10"
-                        />
+                        <Input {...field} type="number" step="0.01" min="0" placeholder="0,00" className="pl-10" />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -180,10 +173,7 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                         <FormControl>
                           <Button
                             variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
+                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                           >
                             {field.value ? (
                               format(field.value, "dd/MM/yyyy", { locale: ptBR })
@@ -213,9 +203,7 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
               <div className="flex flex-col justify-end">
                 <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
                   <p className="text-sm text-muted-foreground">Comissão calculada:</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(calculatedCommission)}
-                  </p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(calculatedCommission)}</p>
                 </div>
               </div>
             </div>
@@ -227,11 +215,7 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                 <FormItem>
                   <FormLabel>Observações (opcional)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Informações adicionais sobre a venda..."
-                      rows={3}
-                    />
+                    <Textarea {...field} placeholder="Informações adicionais sobre a venda..." rows={3} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
