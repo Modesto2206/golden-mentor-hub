@@ -5,12 +5,15 @@ import { useToast } from "@/hooks/use-toast";
 
 export type CovenantType = "INSS" | "Forças Armadas" | "SIAPE" | "CLT" | "FGTS" | "Outros";
 export type SaleStatus = "em_andamento" | "pago" | "cancelado";
+export type OperationType = "Novo" | "Refinanciamento" | "Compra de Dívida" | "Saque FGTS" | "Portabilidade";
 
 export interface Sale {
   id: string;
   seller_id: string;
   client_name: string;
   covenant_type: CovenantType;
+  operation_type: OperationType | null;
+  financial_institution: string | null;
   released_value: number;
   commission_percentage: number;
   commission_value: number;
@@ -24,6 +27,8 @@ export interface Sale {
 export interface CreateSaleData {
   client_name: string;
   covenant_type: CovenantType;
+  operation_type?: OperationType;
+  financial_institution?: string;
   released_value: number;
   commission_percentage: number;
   sale_date: string;

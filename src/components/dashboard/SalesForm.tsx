@@ -14,13 +14,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { CreateSaleData, CovenantType } from "@/hooks/useSales";
+import { CreateSaleData, CovenantType, OperationType } from "@/hooks/useSales";
 
 const covenantTypes: CovenantType[] = ["INSS", "Forças Armadas", "SIAPE", "CLT", "FGTS", "Outros"];
+const operationTypes: OperationType[] = ["Novo", "Refinanciamento", "Compra de Dívida", "Saque FGTS", "Portabilidade"];
 
 const saleSchema = z.object({
   client_name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
   covenant_type: z.enum(["INSS", "Forças Armadas", "SIAPE", "CLT", "FGTS", "Outros"]),
+  operation_type: z.enum(["Novo", "Refinanciamento", "Compra de Dívida", "Saque FGTS", "Portabilidade"]).optional(),
+  financial_institution: z.string().max(200).optional(),
   released_value: z.coerce.number().positive("Valor deve ser maior que zero"),
   commission_percentage: z.coerce.number().min(0, "Porcentagem deve ser positiva").max(100, "Máximo 100%"),
   sale_date: z.date(),
@@ -62,6 +65,8 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
     const saleData: CreateSaleData = {
       client_name: data.client_name,
       covenant_type: data.covenant_type,
+      operation_type: data.operation_type || undefined,
+      financial_institution: data.financial_institution || undefined,
       released_value: data.released_value,
       commission_percentage: Number((data.commission_percentage / 100).toFixed(4)),
       sale_date: format(data.sale_date, "yyyy-MM-dd"),
@@ -115,6 +120,45 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="operation_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Operação</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a operação" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {operationTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="financial_institution"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instituição Financeira</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Ex: Banco do Brasil, Caixa..." />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
