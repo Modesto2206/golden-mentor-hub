@@ -21,7 +21,7 @@ const initialUsers: SetupUser[] = [
   },
   {
     email: "chelloliver30@gmail.com",
-    password: "12345678",
+    password: "Cred3001",
     role: "vendedor",
     full_name: "Chell Oliver",
   },
@@ -45,16 +45,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
+    const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
 
     const results: { email: string; success: boolean; message: string }[] = [];
 
@@ -137,7 +133,7 @@ Deno.serve(async (req) => {
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });
