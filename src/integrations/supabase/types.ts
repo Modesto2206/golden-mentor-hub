@@ -81,8 +81,10 @@ export type Database = {
           commission_value: number | null
           covenant_type: Database["public"]["Enums"]["covenant_type"]
           created_at: string
+          financial_institution: string | null
           id: string
           observations: string | null
+          operation_type: Database["public"]["Enums"]["operation_type"] | null
           released_value: number
           sale_date: string
           seller_id: string
@@ -95,8 +97,10 @@ export type Database = {
           commission_value?: number | null
           covenant_type: Database["public"]["Enums"]["covenant_type"]
           created_at?: string
+          financial_institution?: string | null
           id?: string
           observations?: string | null
+          operation_type?: Database["public"]["Enums"]["operation_type"] | null
           released_value: number
           sale_date: string
           seller_id: string
@@ -109,8 +113,10 @@ export type Database = {
           commission_value?: number | null
           covenant_type?: Database["public"]["Enums"]["covenant_type"]
           created_at?: string
+          financial_institution?: string | null
           id?: string
           observations?: string | null
+          operation_type?: Database["public"]["Enums"]["operation_type"] | null
           released_value?: number
           sale_date?: string
           seller_id?: string
@@ -161,6 +167,12 @@ export type Database = {
         | "CLT"
         | "FGTS"
         | "Outros"
+      operation_type:
+        | "Novo"
+        | "Refinanciamento"
+        | "Compra de Dívida"
+        | "Saque FGTS"
+        | "Portabilidade"
       sale_status: "em_andamento" | "pago" | "cancelado"
     }
     CompositeTypes: {
@@ -297,6 +309,13 @@ export const Constants = {
         "CLT",
         "FGTS",
         "Outros",
+      ],
+      operation_type: [
+        "Novo",
+        "Refinanciamento",
+        "Compra de Dívida",
+        "Saque FGTS",
+        "Portabilidade",
       ],
       sale_status: ["em_andamento", "pago", "cancelado"],
     },

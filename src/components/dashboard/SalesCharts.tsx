@@ -7,7 +7,7 @@ interface SalesChartsProps {
   sales: Sale[];
 }
 
-const COLORS = ["#FFBC00", "#FFD54F", "#B8860B", "#DAA520", "#F0E68C", "#BDB76B"];
+const COLORS = ["#FFBC00", "#FFD54F", "#B8860B", "#DAA520", "#F0E68C", "#BDB76B", "#E6A817", "#CC9900"];
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
@@ -25,6 +25,16 @@ const SalesCharts = ({ sales }: SalesChartsProps) => {
     const grouped: Record<string, number> = {};
     paidSales.forEach((sale) => {
       grouped[sale.covenant_type] = (grouped[sale.covenant_type] || 0) + Number(sale.released_value);
+    });
+    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+  }, [paidSales]);
+
+  // Sales by operation type
+  const operationData = useMemo(() => {
+    const grouped: Record<string, number> = {};
+    paidSales.forEach((sale) => {
+      const key = sale.operation_type || "Não informado";
+      grouped[key] = (grouped[key] || 0) + Number(sale.released_value);
     });
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   }, [paidSales]);
@@ -58,59 +68,20 @@ const SalesCharts = ({ sales }: SalesChartsProps) => {
   }, [paidSales]);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Vendas por Mês</CardTitle>
-          <CardDescription>Faturamento e comissões nos últimos 6 meses</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="name" className="text-xs" />
-                <YAxis tickFormatter={formatCurrency} className="text-xs" />
-                <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Bar dataKey="revenue" name="Faturamento" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="commission" name="Comissão" fill="hsl(var(--primary) / 0.5)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Vendas por Convênio</CardTitle>
-          <CardDescription>Distribuição do faturamento por tipo</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            {covenantData.length > 0 ? (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Vendas por Mês</CardTitle>
+            <CardDescription>Faturamento e comissões nos últimos 6 meses</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={covenantData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {covenantData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="name" className="text-xs" />
+                  <YAxis tickFormatter={formatCurrency} className="text-xs" />
                   <Tooltip
                     formatter={(value: number) => formatCurrency(value)}
                     contentStyle={{
@@ -119,8 +90,83 @@ const SalesCharts = ({ sales }: SalesChartsProps) => {
                       borderRadius: "8px",
                     }}
                   />
-                  <Legend />
-                </PieChart>
+                  <Bar dataKey="revenue" name="Faturamento" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="commission" name="Comissão" fill="hsl(var(--primary) / 0.5)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Vendas por Convênio</CardTitle>
+            <CardDescription>Distribuição do faturamento por tipo</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              {covenantData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={covenantData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {covenantData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  Nenhuma venda paga para exibir
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Operation type chart */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-lg">Vendas por Tipo de Operação</CardTitle>
+          <CardDescription>Distribuição do faturamento por tipo de operação</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            {operationData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={operationData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis type="number" tickFormatter={formatCurrency} className="text-xs" />
+                  <YAxis type="category" dataKey="name" className="text-xs" width={120} />
+                  <Tooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar dataKey="value" name="Faturamento" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground">

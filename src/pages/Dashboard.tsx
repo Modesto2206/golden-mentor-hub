@@ -10,6 +10,8 @@ import DashboardStats from "@/components/dashboard/DashboardStats";
 import SalesForm from "@/components/dashboard/SalesForm";
 import SalesTable from "@/components/dashboard/SalesTable";
 import SalesCharts from "@/components/dashboard/SalesCharts";
+import SalesRanking from "@/components/dashboard/SalesRanking";
+import SalesProjection from "@/components/dashboard/SalesProjection";
 import TeamManagement from "@/components/dashboard/TeamManagement";
 
 const Dashboard = () => {
@@ -63,6 +65,10 @@ const Dashboard = () => {
 
           <TabsContent value="dashboard" className="space-y-6">
             <SalesCharts sales={sales} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <SalesRanking sales={sales} />
+              <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />
+            </div>
           </TabsContent>
 
           <TabsContent value="new-sale">

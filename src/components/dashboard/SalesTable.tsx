@@ -113,6 +113,8 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
                   <TableHead>Cliente</TableHead>
                   {isAdmin && <TableHead>Vendedor</TableHead>}
                   <TableHead>Convênio</TableHead>
+                  <TableHead>Operação</TableHead>
+                  <TableHead>Instituição</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead className="text-right">Comissão</TableHead>
                   <TableHead>Status</TableHead>
@@ -122,13 +124,13 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 8 : 6} className="text-center py-8">
+                    <TableCell colSpan={isAdmin ? 10 : 8} className="text-center py-8">
                       Carregando...
                     </TableCell>
                   </TableRow>
                 ) : filteredSales.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 8 : 6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isAdmin ? 10 : 8} className="text-center py-8 text-muted-foreground">
                       Nenhuma venda encontrada
                     </TableCell>
                   </TableRow>
@@ -151,6 +153,18 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
                         )}
                         <TableCell>
                           <Badge variant="outline">{sale.covenant_type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {sale.operation_type ? (
+                            <Badge variant="outline" className="border-primary/30 text-primary">
+                              {sale.operation_type}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{sale.financial_institution || "—"}</span>
                         </TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(Number(sale.released_value))}

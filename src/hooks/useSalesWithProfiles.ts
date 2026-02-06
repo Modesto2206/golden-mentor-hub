@@ -147,4 +147,4 @@ export const useSalesWithProfiles = () => {
   };
 };
 
-export type { Sale, CreateSaleData, UpdateSaleData, SaleStatus, CovenantType };
+export type { Sale, CreateSaleData, UpdateSaleData, SaleStatus, CovenantType, OperationType } from "@/hooks/useSales";
