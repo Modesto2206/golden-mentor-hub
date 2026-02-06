@@ -40,13 +40,13 @@ const Auth = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-
+    
     try {
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
         let message = "Erro ao fazer login. Verifique suas credenciais.";
-
+        
         if (error.message.includes("Invalid login credentials")) {
           message = "Email ou senha incorretos.";
         } else if (error.message.includes("Email not confirmed")) {
@@ -81,7 +81,11 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background bg-pattern flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
-        <Button variant="ghost" onClick={() => navigate("/")} className="text-muted-foreground hover:text-primary">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/")}
+          className="text-muted-foreground hover:text-primary"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar ao Painel
         </Button>
@@ -92,7 +96,9 @@ const Auth = () => {
               <LogIn className="w-8 h-8 text-primary" />
             </div>
             <CardTitle className="text-2xl text-gold-gradient">Área do Vendedor</CardTitle>
-            <CardDescription>Acesso exclusivo para vendedores e gestão comercial</CardDescription>
+            <CardDescription>
+              Acesso exclusivo para vendedores e gestão comercial
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -143,13 +149,19 @@ const Auth = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
             </Form>
 
-            <p className="mt-6 text-center text-xs text-muted-foreground/70">Acesso restrito a usuários autorizados</p>
+            <p className="mt-6 text-center text-xs text-muted-foreground/70">
+              Acesso restrito a usuários autorizados
+            </p>
           </CardContent>
         </Card>
       </div>
