@@ -2,73 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Painel do Mentor - Design System: Preto e Dourado */
+/* Painel do Mentor - Design System: Preto e Dourado (#FFBC00) */
 
 @layer base {
   :root {
     --background: 0 0% 4%;
-    --foreground: 45 60% 70%;
+    --foreground: 44 60% 70%;
 
     --card: 0 0% 8%;
-    --card-foreground: 45 60% 70%;
+    --card-foreground: 44 60% 70%;
 
     --popover: 0 0% 8%;
-    --popover-foreground: 45 60% 70%;
+    --popover-foreground: 44 60% 70%;
 
-    --primary: 45 81% 53%;
+    --primary: 44 100% 50%;
     --primary-foreground: 0 0% 4%;
 
     --secondary: 0 0% 12%;
-    --secondary-foreground: 45 60% 70%;
+    --secondary-foreground: 44 60% 70%;
 
     --muted: 0 0% 15%;
-    --muted-foreground: 45 30% 50%;
+    --muted-foreground: 44 30% 50%;
 
-    --accent: 45 81% 53%;
+    --accent: 44 100% 50%;
     --accent-foreground: 0 0% 4%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 45 50% 25%;
+    --border: 44 60% 25%;
     --input: 0 0% 15%;
-    --ring: 45 81% 53%;
+    --ring: 44 100% 50%;
 
     --radius: 0.75rem;
 
-    --gold: 45 81% 53%;
-    --gold-light: 45 70% 65%;
-    --gold-dark: 45 90% 40%;
+    --gold: 44 100% 50%;
+    --gold-light: 44 80% 60%;
+    --gold-dark: 44 100% 38%;
   }
 
   .dark {
     --background: 0 0% 4%;
-    --foreground: 45 60% 70%;
+    --foreground: 44 60% 70%;
 
     --card: 0 0% 8%;
-    --card-foreground: 45 60% 70%;
+    --card-foreground: 44 60% 70%;
 
     --popover: 0 0% 8%;
-    --popover-foreground: 45 60% 70%;
+    --popover-foreground: 44 60% 70%;
 
-    --primary: 45 81% 53%;
+    --primary: 44 100% 50%;
     --primary-foreground: 0 0% 4%;
 
     --secondary: 0 0% 12%;
-    --secondary-foreground: 45 60% 70%;
+    --secondary-foreground: 44 60% 70%;
 
     --muted: 0 0% 15%;
-    --muted-foreground: 45 30% 50%;
+    --muted-foreground: 44 30% 50%;
 
-    --accent: 45 81% 53%;
+    --accent: 44 100% 50%;
     --accent-foreground: 0 0% 4%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 45 50% 25%;
+    --border: 44 60% 25%;
     --input: 0 0% 15%;
-    --ring: 45 81% 53%;
+    --ring: 44 100% 50%;
   }
 }
 
@@ -85,24 +85,48 @@
 /* Padrão de fundo sutil */
 .bg-pattern {
   background-image: 
-    radial-gradient(circle at 25% 25%, hsl(45 81% 53% / 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, hsl(45 81% 53% / 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 25% 25%, hsl(44 100% 50% / 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, hsl(44 100% 50% / 0.03) 0%, transparent 50%);
+}
+
+/* Background image global */
+.bg-dashboard {
+  background-color: hsl(var(--background));
+  background-image: var(--bg-image, none);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.bg-dashboard::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: hsl(0 0% 0% / 0.75);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bg-dashboard > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Brilho dourado */
 .gold-glow {
-  box-shadow: 0 0 20px hsl(45 81% 53% / 0.15),
-              0 0 40px hsl(45 81% 53% / 0.1);
+  box-shadow: 0 0 20px hsl(44 100% 50% / 0.15),
+              0 0 40px hsl(44 100% 50% / 0.1);
 }
 
 .gold-glow-hover:hover {
-  box-shadow: 0 0 30px hsl(45 81% 53% / 0.25),
-              0 0 60px hsl(45 81% 53% / 0.15);
+  box-shadow: 0 0 30px hsl(44 100% 50% / 0.25),
+              0 0 60px hsl(44 100% 50% / 0.15);
 }
 
 /* Gradiente dourado para textos */
 .text-gold-gradient {
-  background: linear-gradient(135deg, hsl(45 70% 65%) 0%, hsl(45 81% 53%) 50%, hsl(45 90% 40%) 100%);
+  background: linear-gradient(135deg, hsl(44 80% 60%) 0%, hsl(44 100% 50%) 50%, hsl(44 100% 38%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -111,10 +135,10 @@
 /* Borda dourada animada */
 .border-gold-animated {
   position: relative;
-  border: 1px solid hsl(45 50% 25%);
+  border: 1px solid hsl(44 60% 25%);
   transition: border-color 0.3s ease;
 }
 
 .border-gold-animated:hover {
-  border-color: hsl(45 81% 53%);
+  border-color: hsl(44 100% 50%);
 }

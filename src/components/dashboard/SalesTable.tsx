@@ -158,7 +158,7 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
                         <TableCell className="text-right text-primary font-medium">
                           {formatCurrency(Number(sale.commission_value))}
                           <span className="text-xs text-muted-foreground ml-1">
-                            ({sale.commission_percentage}%)
+                            ({(Number(sale.commission_percentage) * 100).toFixed(2)}%)
                           </span>
                         </TableCell>
                         <TableCell>

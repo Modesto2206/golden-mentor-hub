@@ -40,11 +40,12 @@ const AddUserModal = () => {
   const handleSubmit = async (data: UserFormData) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.functions.invoke("add-user", {
+      const { data: result, error } = await supabase.functions.invoke("add-user", {
         body: data,
       });
 
       if (error) throw error;
+      if (result && !result.success) throw new Error(result.error);
 
       toast({
         title: "Usuário criado!",
@@ -52,6 +53,7 @@ const AddUserModal = () => {
       });
 
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["team-members"] });
       form.reset();
       setOpen(false);
     } catch (error) {

@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify the calling user is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -31,7 +30,7 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Verify caller is admin
+    // Verify caller is authenticated
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -63,87 +62,69 @@ Deno.serve(async (req) => {
 
     if (!callerRole) {
       return new Response(
-        JSON.stringify({ success: false, error: "Apenas administradores podem criar usuários" }),
+        JSON.stringify({ success: false, error: "Apenas administradores podem remover usuários" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const { email, password, role, full_name } = await req.json();
-    console.log(`Creating user: ${email} with role: ${role}`);
+    const { user_id } = await req.json();
+    console.log(`Attempting to remove user: ${user_id}`);
 
-    // Validate inputs
-    if (!email || !password || !role || !full_name) {
+    if (!user_id) {
       return new Response(
-        JSON.stringify({ success: false, error: "Todos os campos são obrigatórios" }),
+        JSON.stringify({ success: false, error: "ID do usuário é obrigatório" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!["vendedor", "administrador"].includes(role)) {
+    // Prevent removing self
+    if (user_id === callingUser.id) {
       return new Response(
-        JSON.stringify({ success: false, error: "Função inválida" }),
+        JSON.stringify({ success: false, error: "Você não pode remover a si mesmo" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create new user
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name,
-      },
-    });
+    // Check if target user is an admin - admins cannot be removed
+    const { data: targetRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user_id)
+      .eq("role", "administrador")
+      .maybeSingle();
 
-    if (createError) {
-      console.error("Create user error:", createError);
+    if (targetRole) {
       return new Response(
-        JSON.stringify({ success: false, error: createError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Não é permitido remover um administrador" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (newUser?.user) {
-      console.log(`User created: ${newUser.user.id}`);
+    // Delete user role
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+    console.log(`Roles deleted for user: ${user_id}`);
 
-      // The handle_new_user trigger should create the profile automatically
-      // But let's ensure the role is assigned
-      const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
-        user_id: newUser.user.id,
-        role,
-      });
+    // Deactivate profile (soft delete)
+    await supabaseAdmin
+      .from("profiles")
+      .update({ is_active: false })
+      .eq("user_id", user_id);
+    console.log(`Profile deactivated for user: ${user_id}`);
 
-      if (roleError) {
-        console.error("Role assignment error:", roleError);
-        // Don't fail the whole operation, user was created
-      }
-
-      // Wait a moment for trigger to fire, then verify profile exists
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("user_id", newUser.user.id)
-        .maybeSingle();
-
-      if (!profile) {
-        console.log("Profile not found via trigger, creating manually");
-        await supabaseAdmin.from("profiles").insert({
-          user_id: newUser.user.id,
-          email,
-          full_name,
-        });
-      }
-
+    // Delete from auth
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+    if (deleteError) {
+      console.error("Delete auth user error:", deleteError);
       return new Response(
-        JSON.stringify({ success: true, message: `Usuário ${email} criado com função: ${role}` }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: deleteError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log(`User ${user_id} removed successfully`);
     return new Response(
-      JSON.stringify({ success: false, error: "Falha ao criar usuário" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: true, message: "Usuário removido com sucesso" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Unexpected error:", error);

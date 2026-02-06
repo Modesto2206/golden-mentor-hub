@@ -7,7 +7,7 @@ interface SalesChartsProps {
   sales: Sale[];
 }
 
-const COLORS = ["#D4AF37", "#FFD700", "#B8860B", "#DAA520", "#F0E68C", "#BDB76B"];
+const COLORS = ["#FFBC00", "#FFD54F", "#B8860B", "#DAA520", "#F0E68C", "#BDB76B"];
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
