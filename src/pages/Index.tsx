@@ -1,6 +1,7 @@
 import { Shield, Users, Building2, Briefcase, Wallet, BarChart3 } from "lucide-react";
 import CategoryCard from "@/components/CategoryCard";
 import SellerAreaCard from "@/components/SellerAreaCard";
+import logoFull from "@/assets/logo-credmais-full.png";
 
 // Configuração das categorias - Atualize os links conforme necessário
 const categories = [
@@ -43,10 +44,19 @@ const categories = [
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background bg-pattern">
+    <div className="min-h-screen bg-dashboard bg-pattern">
       {/* Header */}
       <header className="pt-12 pb-8 px-4">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          {/* Logo destaque */}
+          <div className="flex justify-center">
+            <img
+              src={logoFull}
+              alt="Cred+"
+              className="h-24 md:h-32 w-auto object-contain drop-shadow-[0_0_15px_hsl(44_100%_50%/0.3)]"
+            />
+          </div>
+
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gold-gradient tracking-tight">
             Painel do Mentor
           </h1>
@@ -85,6 +95,25 @@ const Index = () => {
           </div>
         </div>
       </main>
+
+      {/* Seção decorativa institucional */}
+      <section className="px-4 pb-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 md:p-8 flex flex-col md:flex-row items-center gap-6">
+            <img
+              src={logoFull}
+              alt="Cred+ Institucional"
+              className="h-20 md:h-28 w-auto object-contain flex-shrink-0"
+            />
+            <div className="text-center md:text-left space-y-2">
+              <h2 className="text-xl md:text-2xl font-bold text-gold-gradient">Cred+ Crédito Consignado</h2>
+              <p className="text-muted-foreground text-sm md:text-base">
+                Plataforma exclusiva de organização estratégica para mentores e vendedores de crédito consignado. Acesse materiais, gerencie suas vendas e acompanhe resultados.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="pb-8 text-center">
