@@ -47,7 +47,7 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
     defaultValues: {
       client_name: "",
       released_value: 0,
-      commission_percentage: 5,
+      commission_percentage: Number((data.commission_percentage / 100).toFixed(4)),
       sale_date: new Date(),
       observations: "",
     },
