@@ -92,7 +92,7 @@
 /* Background image global */
 .bg-dashboard {
   background-color: hsl(var(--background));
-  background-image: var(--bg-image, none);
+  background-image: url('/images/bg-pattern.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
