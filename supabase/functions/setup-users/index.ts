@@ -21,7 +21,7 @@ const initialUsers: SetupUser[] = [
   },
   {
     email: "chelloliver30@gmail.com",
-    password: "Cred3001",
+    password: "12345678",
     role: "vendedor",
     full_name: "Chell Oliver",
   },
