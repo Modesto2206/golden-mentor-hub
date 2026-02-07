@@ -1,10 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutDashboard, PlusCircle, List, Users } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSalesWithProfiles } from "@/hooks/useSalesWithProfiles";
 import { useMonthlyGoal } from "@/hooks/useMonthlyGoal";
+import { useDashboardLayout, WidgetConfig } from "@/hooks/useDashboardLayout";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardStats from "@/components/dashboard/DashboardStats";
 import SalesForm from "@/components/dashboard/SalesForm";
@@ -13,12 +28,29 @@ import SalesCharts from "@/components/dashboard/SalesCharts";
 import SalesRanking from "@/components/dashboard/SalesRanking";
 import SalesProjection from "@/components/dashboard/SalesProjection";
 import TeamManagement from "@/components/dashboard/TeamManagement";
+import SortableWidget from "@/components/dashboard/SortableWidget";
+import EditModeToolbar from "@/components/dashboard/EditModeToolbar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, role, isLoading: authLoading, isAdmin } = useAuth();
   const { sales, sellers, isLoading, createSale, updateSale, deleteSale, isCreating } = useSalesWithProfiles();
   const { monthlyGoal } = useMonthlyGoal();
+  const {
+    layout,
+    isEditMode,
+    enterEditMode,
+    confirmLayout,
+    cancelEdit,
+    resetLayout,
+    reorderWidgets,
+    toggleWidgetVisibility,
+  } = useDashboardLayout();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+  );
 
   useEffect(() => {
     if (!authLoading && (!user || !role)) {
@@ -33,6 +65,24 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  // Map widget IDs to their content
+  const widgetContentMap: Record<string, ReactNode> = {
+    stats: <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />,
+    charts: <SalesCharts sales={sales} />,
+    ranking: <SalesRanking sales={sales} />,
+    projection: <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />,
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = layout.findIndex((w) => w.id === active.id);
+      const newIndex = layout.findIndex((w) => w.id === over.id);
+      const newLayout = arrayMove(layout, oldIndex, newIndex);
+      reorderWidgets(newLayout);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-dashboard bg-pattern flex flex-col">
@@ -64,14 +114,42 @@ const Dashboard = () => {
 
           {/* Conteúdo principal */}
           <div className="flex-1 p-4 md:p-6 space-y-6 overflow-auto">
-            <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />
-
-            <TabsContent value="dashboard" className="space-y-6 mt-0">
-              <SalesCharts sales={sales} />
-              <div className="grid gap-4 md:grid-cols-2">
-                <SalesRanking sales={sales} />
-                <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />
+            <TabsContent value="dashboard" className="space-y-4 mt-0">
+              <div className="flex justify-end">
+                <EditModeToolbar
+                  isEditMode={isEditMode}
+                  onEnterEdit={enterEditMode}
+                  onConfirm={confirmLayout}
+                  onCancel={cancelEdit}
+                  onReset={resetLayout}
+                />
               </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={layout.map((w) => w.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4">
+                    {layout.map((widget) => (
+                      <SortableWidget
+                        key={widget.id}
+                        id={widget.id}
+                        label={widget.label}
+                        isEditMode={isEditMode}
+                        visible={widget.visible}
+                        onToggleVisibility={() => toggleWidgetVisibility(widget.id)}
+                      >
+                        {widgetContentMap[widget.id]}
+                      </SortableWidget>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </TabsContent>
 
             <TabsContent value="new-sale" className="mt-0">
