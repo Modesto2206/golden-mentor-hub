@@ -35,63 +35,67 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-dashboard bg-pattern">
+    <div className="min-h-screen bg-dashboard bg-pattern flex flex-col">
       <DashboardHeader />
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />
-
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'} lg:w-auto lg:inline-flex`}>
-            <TabsTrigger value="dashboard" className="gap-2">
-              <LayoutDashboard className="w-4 h-4" />
-              <span className="hidden sm:inline">Dashboard</span>
+      <div className="flex flex-1">
+        <Tabs defaultValue="dashboard" orientation="vertical" className="flex flex-1">
+          {/* Sidebar esquerda */}
+          <TabsList className="flex flex-col h-auto w-14 md:w-52 shrink-0 bg-card/80 backdrop-blur-sm border-r border-border/50 rounded-none justify-start gap-1 p-2 pt-4">
+            <TabsTrigger value="dashboard" className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md">
+              <LayoutDashboard className="w-5 h-5 shrink-0" />
+              <span className="hidden md:inline text-sm">Dashboard</span>
             </TabsTrigger>
-            <TabsTrigger value="new-sale" className="gap-2">
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Nova Venda</span>
+            <TabsTrigger value="new-sale" className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md">
+              <PlusCircle className="w-5 h-5 shrink-0" />
+              <span className="hidden md:inline text-sm">Nova Venda</span>
             </TabsTrigger>
-            <TabsTrigger value="sales" className="gap-2">
-              <List className="w-4 h-4" />
-              <span className="hidden sm:inline">Vendas</span>
+            <TabsTrigger value="sales" className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md">
+              <List className="w-5 h-5 shrink-0" />
+              <span className="hidden md:inline text-sm">Vendas</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="team" className="gap-2">
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Equipe</span>
+              <TabsTrigger value="team" className="w-full justify-start gap-3 px-3 py-2.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary rounded-md">
+                <Users className="w-5 h-5 shrink-0" />
+                <span className="hidden md:inline text-sm">Equipe</span>
               </TabsTrigger>
             )}
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <SalesCharts sales={sales} />
-            <div className="grid gap-4 md:grid-cols-2">
-              <SalesRanking sales={sales} />
-              <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />
-            </div>
-          </TabsContent>
+          {/* Conteúdo principal */}
+          <div className="flex-1 p-4 md:p-6 space-y-6 overflow-auto">
+            <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />
 
-          <TabsContent value="new-sale">
-            <SalesForm onSubmit={createSale} isSubmitting={isCreating} />
-          </TabsContent>
-
-          <TabsContent value="sales">
-            <SalesTable
-              sales={sales}
-              sellers={sellers}
-              isLoading={isLoading}
-              onUpdateStatus={(id, status) => updateSale({ id, status })}
-              onDelete={deleteSale}
-            />
-          </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="team">
-              <TeamManagement />
+            <TabsContent value="dashboard" className="space-y-6 mt-0">
+              <SalesCharts sales={sales} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <SalesRanking sales={sales} />
+                <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />
+              </div>
             </TabsContent>
-          )}
+
+            <TabsContent value="new-sale" className="mt-0">
+              <SalesForm onSubmit={createSale} isSubmitting={isCreating} />
+            </TabsContent>
+
+            <TabsContent value="sales" className="mt-0">
+              <SalesTable
+                sales={sales}
+                sellers={sellers}
+                isLoading={isLoading}
+                onUpdateStatus={(id, status) => updateSale({ id, status })}
+                onDelete={deleteSale}
+              />
+            </TabsContent>
+
+            {isAdmin && (
+              <TabsContent value="team" className="mt-0">
+                <TeamManagement />
+              </TabsContent>
+            )}
+          </div>
         </Tabs>
-      </main>
+      </div>
     </div>
   );
 };
