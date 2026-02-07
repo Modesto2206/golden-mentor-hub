@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfiles } from "@/hooks/useProfiles";
 import AddUserModal from "./AddUserModal";
+import ThemeToggle from "@/components/ThemeToggle";
 import logoFull from "@/assets/logo-credmais-full.png";
 
 const DashboardHeader = () => {
@@ -30,8 +31,9 @@ const DashboardHeader = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {isAdmin && <AddUserModal />}
+          <ThemeToggle />
           <div className="text-right hidden md:block">
             <p className="text-sm font-medium">{currentProfile?.full_name || "Usuário"}</p>
             <p className="text-xs text-muted-foreground">{currentProfile?.email}</p>

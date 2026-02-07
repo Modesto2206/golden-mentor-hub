@@ -6,39 +6,39 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 44 60% 70%;
+    --background: 40 20% 95%;
+    --foreground: 0 0% 15%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 44 60% 70%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
 
-    --popover: 0 0% 8%;
-    --popover-foreground: 44 60% 70%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
 
-    --primary: 44 100% 50%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 44 100% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 44 60% 70%;
+    --secondary: 40 15% 90%;
+    --secondary-foreground: 0 0% 20%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 44 30% 50%;
+    --muted: 40 10% 88%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 44 100% 50%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 44 100% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 44 60% 25%;
-    --input: 0 0% 15%;
-    --ring: 44 100% 50%;
+    --border: 40 15% 82%;
+    --input: 40 15% 88%;
+    --ring: 44 100% 45%;
 
     --radius: 0.75rem;
 
-    --gold: 44 100% 50%;
-    --gold-light: 44 80% 60%;
-    --gold-dark: 44 100% 38%;
+    --gold: 44 100% 45%;
+    --gold-light: 44 80% 55%;
+    --gold-dark: 44 100% 35%;
   }
 
   .dark {
@@ -69,6 +69,10 @@
     --border: 44 60% 25%;
     --input: 0 0% 15%;
     --ring: 44 100% 50%;
+
+    --gold: 44 100% 50%;
+    --gold-light: 44 80% 60%;
+    --gold-dark: 44 100% 38%;
   }
 }
 
@@ -84,6 +88,12 @@
 
 /* Padrão de fundo sutil */
 .bg-pattern {
+  background-image: 
+    radial-gradient(circle at 25% 25%, hsl(44 100% 50% / 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, hsl(44 100% 50% / 0.05) 0%, transparent 50%);
+}
+
+.dark .bg-pattern {
   background-image: 
     radial-gradient(circle at 25% 25%, hsl(44 100% 50% / 0.03) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, hsl(44 100% 50% / 0.03) 0%, transparent 50%);
@@ -103,9 +113,13 @@
   content: '';
   position: fixed;
   inset: 0;
-  background: hsl(0 0% 0% / 0.75);
+  background: hsl(0 0% 100% / 0.85);
   z-index: 0;
   pointer-events: none;
+}
+
+.dark .bg-dashboard::before {
+  background: hsl(0 0% 0% / 0.75);
 }
 
 .bg-dashboard > * {
@@ -126,6 +140,13 @@
 
 /* Gradiente dourado para textos */
 .text-gold-gradient {
+  background: linear-gradient(135deg, hsl(44 100% 35%) 0%, hsl(44 100% 45%) 50%, hsl(44 100% 30%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .text-gold-gradient {
   background: linear-gradient(135deg, hsl(44 80% 60%) 0%, hsl(44 100% 50%) 50%, hsl(44 100% 38%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
