@@ -19,7 +19,7 @@ const DashboardHeader = () => {
     <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img src={logo} alt="Cred+" className="h-12 w-auto object-contain" />
+          <img src={logo} alt="Cred+" className="h-16 w-auto object-contain" />
           <h1 className="text-xl font-bold text-gold-gradient hidden sm:block">Área do Vendedor</h1>
           {isAdmin && (
             <Badge variant="outline" className="border-primary/50 text-primary gap-1">
