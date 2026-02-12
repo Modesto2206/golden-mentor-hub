@@ -178,7 +178,6 @@ export type Database = {
       }
       banks: {
         Row: {
-          base_url: string | null
           code: string | null
           company_id: string
           created_at: string
@@ -186,12 +185,10 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
-          possui_api: boolean
           priority: number
           updated_at: string
         }
         Insert: {
-          base_url?: string | null
           code?: string | null
           company_id: string
           created_at?: string
@@ -199,12 +196,10 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
-          possui_api?: boolean
           priority?: number
           updated_at?: string
         }
         Update: {
-          base_url?: string | null
           code?: string | null
           company_id?: string
           created_at?: string
@@ -212,7 +207,6 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
-          possui_api?: boolean
           priority?: number
           updated_at?: string
         }
@@ -932,7 +926,6 @@ export type Database = {
           company_id: string
           covenant: Database["public"]["Enums"]["covenant"] | null
           created_at: string
-          erro_banco: string | null
           external_proposal_id: string | null
           id: string
           installment_value: number | null
@@ -940,13 +933,10 @@ export type Database = {
           internal_status: Database["public"]["Enums"]["proposal_internal_status"]
           modality: Database["public"]["Enums"]["loan_modality"] | null
           observations: string | null
-          payload_enviado: Json | null
           pix_key: string | null
           product_id: string | null
-          protocolo_banco: string | null
           released_value: number | null
           requested_value: number | null
-          resposta_banco: Json | null
           seller_id: string
           term_months: number | null
           updated_at: string
@@ -963,7 +953,6 @@ export type Database = {
           company_id: string
           covenant?: Database["public"]["Enums"]["covenant"] | null
           created_at?: string
-          erro_banco?: string | null
           external_proposal_id?: string | null
           id?: string
           installment_value?: number | null
@@ -971,13 +960,10 @@ export type Database = {
           internal_status?: Database["public"]["Enums"]["proposal_internal_status"]
           modality?: Database["public"]["Enums"]["loan_modality"] | null
           observations?: string | null
-          payload_enviado?: Json | null
           pix_key?: string | null
           product_id?: string | null
-          protocolo_banco?: string | null
           released_value?: number | null
           requested_value?: number | null
-          resposta_banco?: Json | null
           seller_id: string
           term_months?: number | null
           updated_at?: string
@@ -994,7 +980,6 @@ export type Database = {
           company_id?: string
           covenant?: Database["public"]["Enums"]["covenant"] | null
           created_at?: string
-          erro_banco?: string | null
           external_proposal_id?: string | null
           id?: string
           installment_value?: number | null
@@ -1002,13 +987,10 @@ export type Database = {
           internal_status?: Database["public"]["Enums"]["proposal_internal_status"]
           modality?: Database["public"]["Enums"]["loan_modality"] | null
           observations?: string | null
-          payload_enviado?: Json | null
           pix_key?: string | null
           product_id?: string | null
-          protocolo_banco?: string | null
           released_value?: number | null
           requested_value?: number | null
-          resposta_banco?: Json | null
           seller_id?: string
           term_months?: number | null
           updated_at?: string

@@ -8,9 +8,3 @@ verify_jwt = false
 
 [functions.remove-user]
 verify_jwt = false
-
-[functions.enviar-proposta-facta]
-verify_jwt = false
-
-[functions.sincronizar-status-facta]
-verify_jwt = false
