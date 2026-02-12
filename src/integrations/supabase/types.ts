@@ -14,8 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          company_id: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_data: Json | null
+          old_data: Json | null
+          resource: string
+          resource_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          resource: string
+          resource_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_data?: Json | null
+          old_data?: Json | null
+          resource?: string
+          resource_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monthly_goals: {
         Row: {
+          company_id: string | null
           created_at: string
           id: string
           month: number
@@ -24,6 +99,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           id?: string
           month: number
@@ -32,6 +108,7 @@ export type Database = {
           year: number
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           id?: string
           month?: number
@@ -39,10 +116,19 @@ export type Database = {
           updated_at?: string
           year?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
+          company_id: string | null
           created_at: string
           email: string
           full_name: string
@@ -53,6 +139,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -63,6 +150,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           email?: string
           full_name?: string
@@ -72,6 +160,38 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          action: Database["public"]["Enums"]["app_action"]
+          created_at: string
+          id: string
+          resource: Database["public"]["Enums"]["app_resource"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["app_action"]
+          created_at?: string
+          id?: string
+          resource: Database["public"]["Enums"]["app_resource"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["app_action"]
+          created_at?: string
+          id?: string
+          resource?: Database["public"]["Enums"]["app_resource"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
         Relationships: []
       }
       sales: {
@@ -79,6 +199,7 @@ export type Database = {
           client_name: string
           commission_percentage: number
           commission_value: number | null
+          company_id: string | null
           covenant_type: Database["public"]["Enums"]["covenant_type"]
           created_at: string
           financial_institution: string | null
@@ -95,6 +216,7 @@ export type Database = {
           client_name: string
           commission_percentage: number
           commission_value?: number | null
+          company_id?: string | null
           covenant_type: Database["public"]["Enums"]["covenant_type"]
           created_at?: string
           financial_institution?: string | null
@@ -111,6 +233,7 @@ export type Database = {
           client_name?: string
           commission_percentage?: number
           commission_value?: number | null
+          company_id?: string | null
           covenant_type?: Database["public"]["Enums"]["covenant_type"]
           created_at?: string
           financial_institution?: string | null
@@ -123,31 +246,59 @@ export type Database = {
           status?: Database["public"]["Enums"]["sale_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
+          company_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          company_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_user_company_id: { Args: { _user_id: string }; Returns: string }
+      has_permission: {
+        Args: {
+          _action: Database["public"]["Enums"]["app_action"]
+          _resource: Database["public"]["Enums"]["app_resource"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -156,10 +307,38 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
       is_vendedor: { Args: never; Returns: boolean }
     }
     Enums: {
-      app_role: "vendedor" | "administrador"
+      app_action: "view" | "create" | "update" | "delete"
+      app_resource:
+        | "empresas"
+        | "usuarios"
+        | "credenciais_api"
+        | "bancos"
+        | "produtos"
+        | "clientes"
+        | "propostas"
+        | "contratos_portabilidade"
+        | "comissoes"
+        | "metas"
+        | "relatorios"
+        | "auditoria"
+        | "tarefas"
+        | "integracoes"
+        | "configuracoes"
+      app_role:
+        | "vendedor"
+        | "administrador"
+        | "raiz"
+        | "admin_global"
+        | "admin_empresa"
+        | "gerente"
+        | "auditor"
+        | "compliance"
+        | "financeiro"
+        | "operacoes"
       covenant_type:
         | "INSS"
         | "Forças Armadas"
@@ -301,7 +480,36 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["vendedor", "administrador"],
+      app_action: ["view", "create", "update", "delete"],
+      app_resource: [
+        "empresas",
+        "usuarios",
+        "credenciais_api",
+        "bancos",
+        "produtos",
+        "clientes",
+        "propostas",
+        "contratos_portabilidade",
+        "comissoes",
+        "metas",
+        "relatorios",
+        "auditoria",
+        "tarefas",
+        "integracoes",
+        "configuracoes",
+      ],
+      app_role: [
+        "vendedor",
+        "administrador",
+        "raiz",
+        "admin_global",
+        "admin_empresa",
+        "gerente",
+        "auditor",
+        "compliance",
+        "financeiro",
+        "operacoes",
+      ],
       covenant_type: [
         "INSS",
         "Forças Armadas",
