@@ -91,14 +91,44 @@ serve(async (req) => {
     const baseUrl = proposal.banks.base_url || "https://webapi.facta.com.br";
 
     // Send to Facta API
-    const factaResponse = await fetch(`${baseUrl}/v2/propostas`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${FACTA_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+    const apiUrl = `${baseUrl}/v2/propostas`;
+    console.log("Enviando proposta para:", apiUrl);
+
+    let factaResponse: Response;
+    try {
+      factaResponse = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${FACTA_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (fetchError: unknown) {
+      const fetchMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      console.error("Erro de conexão com API Facta:", fetchMsg);
+
+      await supabase
+        .from("proposals")
+        .update({
+          bank_status: "nao_enviado",
+          payload_enviado: payload,
+          erro_banco: `Erro de conexão: ${fetchMsg}. Verifique se a URL base (${baseUrl}) está correta.`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", proposalId);
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Não foi possível conectar à API Facta (${baseUrl}). Verifique se a URL está correta. Detalhe: ${fetchMsg}`,
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
     const factaData = await factaResponse.json();
 
