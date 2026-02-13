@@ -8,7 +8,7 @@ const corsHeaders = {
 interface SetupUser {
   email: string;
   password: string;
-  role: "vendedor" | "administrador";
+  role: "vendedor" | "administrador" | "raiz" | "admin_global";
   full_name: string;
 }
 
@@ -28,8 +28,8 @@ const initialUsers: SetupUser[] = [
   {
     email: "jvmodesto10@gmail.com",
     password: "Cred3001",
-    role: "administrador",
-    full_name: "Administrador",
+    role: "raiz",
+    full_name: "Super Admin",
   },
   {
     email: "contatonewtcompany@gmail.com",
@@ -48,24 +48,18 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
     const results: { email: string; success: boolean; message: string }[] = [];
 
     for (const user of initialUsers) {
       try {
-        // Check if user already exists
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
         const existingUser = existingUsers?.users?.find((u) => u.email === user.email);
 
         if (existingUser) {
-          // User exists, ensure role is set
+          // Update role to latest
           const { data: existingRole } = await supabaseAdmin
             .from("user_roles")
             .select("*")
@@ -77,54 +71,37 @@ Deno.serve(async (req) => {
               user_id: existingUser.id,
               role: user.role,
             });
+          } else if (existingRole.role !== user.role) {
+            await supabaseAdmin.from("user_roles")
+              .update({ role: user.role })
+              .eq("user_id", existingUser.id);
           }
 
-          results.push({
-            email: user.email,
-            success: true,
-            message: "User already exists, role verified",
-          });
+          results.push({ email: user.email, success: true, message: `Role updated to ${user.role}` });
           continue;
         }
 
-        // Create new user
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
           email: user.email,
           password: user.password,
           email_confirm: true,
-          user_metadata: {
-            full_name: user.full_name,
-          },
+          user_metadata: { full_name: user.full_name },
         });
 
         if (createError) {
-          results.push({
-            email: user.email,
-            success: false,
-            message: createError.message,
-          });
+          results.push({ email: user.email, success: false, message: createError.message });
           continue;
         }
 
         if (newUser?.user) {
-          // Assign role
           await supabaseAdmin.from("user_roles").insert({
             user_id: newUser.user.id,
             role: user.role,
           });
-
-          results.push({
-            email: user.email,
-            success: true,
-            message: `User created with role: ${user.role}`,
-          });
+          results.push({ email: user.email, success: true, message: `Created with role: ${user.role}` });
         }
       } catch (err) {
-        results.push({
-          email: user.email,
-          success: false,
-          message: err instanceof Error ? err.message : "Unknown error",
-        });
+        results.push({ email: user.email, success: false, message: err instanceof Error ? err.message : "Unknown error" });
       }
     }
 
@@ -134,10 +111,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     return new Response(
       JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
