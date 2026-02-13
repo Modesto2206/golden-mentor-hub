@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
-  List, LogOut, Shield, User, ChevronLeft, ChevronRight,
-  Landmark, ClipboardList
+  LogOut, Shield, User, ChevronLeft, ChevronRight,
+  Landmark
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +28,6 @@ const navItems: NavItem[] = [
   { label: "Nova Proposta", icon: <PlusCircle className="w-5 h-5" />, href: "/propostas/nova" },
   { label: "Clientes", icon: <Users className="w-5 h-5" />, href: "/clientes" },
   { label: "Bancos", icon: <Landmark className="w-5 h-5" />, href: "/bancos" },
-  { label: "Vendas", icon: <List className="w-5 h-5" />, href: "/dashboard?tab=sales" },
-  { label: "Equipe", icon: <ClipboardList className="w-5 h-5" />, href: "/dashboard?tab=team", roles: ["administrador", "raiz", "admin_global", "admin_empresa", "gerente"] },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -82,7 +80,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Cred+" className="h-10 w-auto object-contain" />
+            <img src={logo} alt="Cred+" className="h-[60px] w-auto object-contain" />
             <Badge variant="outline" className="border-primary/50 text-primary gap-1 hidden sm:flex">
               {role === "vendedor" ? <User className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
               {roleLabels[role] || role}

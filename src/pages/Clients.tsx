@@ -7,16 +7,15 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Search, Plus, UserPlus, Edit, Trash2, Eye
+  Search, UserPlus, MessageCircle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -49,12 +48,19 @@ const formatCPF = (value: string) => {
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 };
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
 const clientSchema = z.object({
   full_name: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(200),
   cpf: z.string().min(14, "CPF inválido").refine((v) => isValidCPF(v.replace(/\D/g, "")), "CPF inválido"),
-  birth_date: z.string().optional(),
+  birth_date: z.string().min(1, "Data de nascimento é obrigatória"),
+  phone: z.string().min(14, "Telefone inválido (DDD + número)"),
   gender: z.string().optional(),
-  phone: z.string().max(20).optional(),
   email: z.string().email("Email inválido").max(255).optional().or(z.literal("")),
   address_city: z.string().max(100).optional(),
   address_state: z.string().max(2).optional(),
@@ -64,7 +70,7 @@ const clientSchema = z.object({
 type ClientFormData = z.infer<typeof clientSchema>;
 
 const ClientsPage = () => {
-  const { companyId, isAdmin } = useAuth();
+  const { companyId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -72,7 +78,7 @@ const ClientsPage = () => {
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { full_name: "", cpf: "", phone: "", email: "", internal_notes: "" },
+    defaultValues: { full_name: "", cpf: "", phone: "", email: "", internal_notes: "", birth_date: "" },
   });
 
   const { data: clients = [], isLoading } = useQuery({
@@ -96,7 +102,7 @@ const ClientsPage = () => {
         email: data.email || null,
         birth_date: data.birth_date || null,
         gender: data.gender || null,
-        phone: data.phone || null,
+        phone: data.phone.replace(/\D/g, "") || null,
         address_city: data.address_city || null,
         address_state: data.address_state || null,
         internal_notes: data.internal_notes || null,
@@ -115,14 +121,28 @@ const ClientsPage = () => {
     },
   });
 
-  const filtered = clients.filter((c: any) =>
-    c.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    c.cpf.includes(search.replace(/\D/g, ""))
-  );
+  // Exact CPF search or name search
+  const searchDigits = search.replace(/\D/g, "");
+  const isSearchingCPF = searchDigits.length > 0;
+
+  const filtered = clients.filter((c: any) => {
+    if (!search) return true;
+    if (isSearchingCPF) {
+      // Exact CPF match only
+      return c.cpf === searchDigits;
+    }
+    return c.full_name.toLowerCase().includes(search.toLowerCase());
+  });
 
   const maskCPF = (cpf: string) => {
     if (!cpf || cpf.length < 11) return cpf;
     return `${cpf.slice(0, 3)}.***.***-${cpf.slice(-2)}`;
+  };
+
+  const getWhatsAppLink = (phone: string) => {
+    const digits = phone?.replace(/\D/g, "");
+    if (!digits) return null;
+    return `https://wa.me/55${digits}`;
   };
 
   return (
@@ -167,15 +187,22 @@ const ClientsPage = () => {
                     )} />
                     <FormField control={form.control} name="birth_date" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Data de Nascimento</FormLabel>
+                        <FormLabel>Data de Nascimento *</FormLabel>
                         <FormControl><Input {...field} type="date" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
                     <FormField control={form.control} name="phone" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefone</FormLabel>
-                        <FormControl><Input {...field} placeholder="(00) 00000-0000" /></FormControl>
+                        <FormLabel>Telefone *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="(00) 00000-0000"
+                            onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                            maxLength={15}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -227,17 +254,20 @@ const ClientsPage = () => {
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF..." className="pl-10" />
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF exato..." className="pl-10" />
         </div>
+        {isSearchingCPF && filtered.length === 0 && search.length > 0 && (
+          <p className="text-sm text-muted-foreground">Cliente não encontrado</p>
+        )}
 
         {/* Clients Table */}
         <Card className="border-border/50">
           <CardContent className="p-0">
             {isLoading ? (
               <p className="p-6 text-muted-foreground">Carregando...</p>
-            ) : filtered.length === 0 ? (
+            ) : filtered.length === 0 && !isSearchingCPF ? (
               <p className="p-6 text-center text-muted-foreground">Nenhum cliente encontrado</p>
-            ) : (
+            ) : filtered.length === 0 ? null : (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -246,24 +276,37 @@ const ClientsPage = () => {
                     <TableHead className="hidden md:table-cell">Telefone</TableHead>
                     <TableHead className="hidden md:table-cell">Cidade/UF</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Contato</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((client: any) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.full_name}</TableCell>
-                      <TableCell className="font-mono text-xs">{maskCPF(client.cpf)}</TableCell>
-                      <TableCell className="hidden md:table-cell">{client.phone || "—"}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {client.address_city ? `${client.address_city}/${client.address_state}` : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={client.is_active ? "default" : "secondary"} className="text-xs">
-                          {client.is_active ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filtered.map((client: any) => {
+                    const waLink = getWhatsAppLink(client.phone);
+                    return (
+                      <TableRow key={client.id}>
+                        <TableCell className="font-medium">{client.full_name}</TableCell>
+                        <TableCell className="font-mono text-xs">{maskCPF(client.cpf)}</TableCell>
+                        <TableCell className="hidden md:table-cell">{client.phone || "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {client.address_city ? `${client.address_city}/${client.address_state}` : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={client.is_active ? "default" : "secondary"} className="text-xs">
+                            {client.is_active ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {waLink ? (
+                            <Button variant="ghost" size="sm" asChild className="text-green-500 hover:text-green-600 p-1 h-auto">
+                              <a href={waLink} target="_blank" rel="noopener noreferrer" title="Entrar em Contato">
+                                <MessageCircle className="w-4 h-4" />
+                              </a>
+                            </Button>
+                          ) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}

@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import {
-  Plus, Search, FileText, Download, Settings, Filter
+  Plus, Search, Download, Trash2, Edit, Send
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -16,21 +17,27 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 import AppLayout from "@/components/AppLayout";
 
 const internalStatusLabels: Record<string, string> = {
-  rascunho: "Rascunho",
-  pre_cadastrada: "Pré-Cadastrada",
-  cadastrada: "Cadastrada",
-  enviada_analise: "Enviada p/ Análise",
   em_analise: "Em Análise",
-  pendente_formalizacao: "Pend. Formalização",
-  pendente_assinatura: "Pend. Assinatura",
-  aprovada: "Aprovada",
-  reprovada: "Reprovada",
-  cancelada: "Cancelada",
-  paga_liberada: "Paga/Liberada",
+  pendente_formalizacao: "Pendente",
+  aprovada: "Aprovado",
 };
+
+const internalStatusOptions = [
+  { value: "em_analise", label: "Em Análise" },
+  { value: "pendente_formalizacao", label: "Pendente" },
+  { value: "aprovada", label: "Aprovado" },
+];
 
 const bankStatusLabels: Record<string, string> = {
   nao_enviado: "Não Enviado",
@@ -44,17 +51,9 @@ const bankStatusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  rascunho: "bg-muted text-muted-foreground",
-  pre_cadastrada: "bg-blue-500/10 text-blue-500",
-  cadastrada: "bg-blue-600/10 text-blue-600",
-  enviada_analise: "bg-amber-500/10 text-amber-500",
   em_analise: "bg-amber-600/10 text-amber-600",
   pendente_formalizacao: "bg-orange-500/10 text-orange-500",
-  pendente_assinatura: "bg-orange-600/10 text-orange-600",
   aprovada: "bg-green-500/10 text-green-500",
-  reprovada: "bg-destructive/10 text-destructive",
-  cancelada: "bg-destructive/20 text-destructive",
-  paga_liberada: "bg-green-600/10 text-green-600",
 };
 
 const modalityLabels: Record<string, string> = {
@@ -70,21 +69,72 @@ const formatCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "c
 
 const ProposalsPage = () => {
   const navigate = useNavigate();
-  const { companyId } = useAuth();
+  const { companyId, isAdmin, user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [bankStatusFilter, setBankStatusFilter] = useState("all");
+  const [editProposal, setEditProposal] = useState<any>(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: proposals = [], isLoading } = useQuery({
     queryKey: ["proposals", companyId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("proposals" as any) as any)
-        .select("*, clients(full_name, cpf), banks(name)")
+        .select("*, clients(full_name, cpf), banks(name, possui_api)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
     enabled: !!companyId,
+  });
+
+  const updateProposal = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await (supabase.from("proposals" as any) as any)
+        .update({ internal_status: status })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["proposals"] });
+      toast({ title: "Proposta atualizada!" });
+      setEditProposal(null);
+    },
+    onError: (e) => toast({ variant: "destructive", title: "Erro", description: e.message }),
+  });
+
+  const deleteProposal = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from("proposals" as any) as any)
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["proposals"] });
+      toast({ title: "Proposta excluída!" });
+      setDeleteId(null);
+    },
+    onError: (e) => toast({ variant: "destructive", title: "Erro", description: e.message }),
+  });
+
+  const sendToFacta = useMutation({
+    mutationFn: async (proposalId: string) => {
+      const { data, error } = await supabase.functions.invoke("enviar-proposta-facta", {
+        body: { proposalId },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Erro ao enviar para Facta");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["proposals"] });
+      toast({ title: "Proposta enviada para Facta!", description: `Protocolo: ${data.protocolo || "—"}` });
+    },
+    onError: (e) => toast({ variant: "destructive", title: "Erro ao enviar", description: e.message }),
   });
 
   const filtered = proposals.filter((p: any) => {
@@ -97,15 +147,17 @@ const ProposalsPage = () => {
     return matchSearch && matchStatus && matchBankStatus;
   });
 
-  // Dashboard cards
   const totalValue = proposals.reduce((s: number, p: any) => s + (p.released_value || p.requested_value || 0), 0);
   const totalProposals = proposals.length;
-  const approvedCount = proposals.filter((p: any) => ["aprovada", "paga_liberada"].includes(p.internal_status)).length;
+  const approvedCount = proposals.filter((p: any) => p.internal_status === "aprovada").length;
+
+  const canEditProposal = (p: any) => isAdmin || p.seller_id === user?.id;
+  const canDeleteProposal = () => isAdmin;
+  const isFactaBank = (p: any) => p.banks?.possui_api === true && p.banks?.name?.toLowerCase().includes("facta");
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Top Buttons */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gold-gradient">Propostas</h1>
           <div className="flex gap-2 flex-wrap">
@@ -134,7 +186,7 @@ const ProposalsPage = () => {
           </Card>
           <Card className="border-border/50">
             <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Aprovadas / Pagas</p>
+              <p className="text-xs text-muted-foreground">Aprovadas</p>
               <p className="text-xl font-bold text-green-500">{approvedCount}</p>
             </CardContent>
           </Card>
@@ -152,8 +204,8 @@ const ProposalsPage = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Status</SelectItem>
-              {Object.entries(internalStatusLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
+              {internalStatusOptions.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -187,12 +239,14 @@ const ProposalsPage = () => {
                     <TableHead>Valor</TableHead>
                     <TableHead>Status Interno</TableHead>
                     <TableHead>Status Banco</TableHead>
+                    <TableHead className="hidden md:table-cell">Protocolo</TableHead>
                     <TableHead className="hidden md:table-cell">Data</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.map((p: any) => (
-                    <TableRow key={p.id} className="cursor-pointer hover:bg-secondary/30">
+                    <TableRow key={p.id}>
                       <TableCell className="font-medium">{p.clients?.full_name || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs">
@@ -202,7 +256,7 @@ const ProposalsPage = () => {
                       <TableCell>{p.banks?.name || "—"}</TableCell>
                       <TableCell>{formatCurrency(p.released_value || p.requested_value || 0)}</TableCell>
                       <TableCell>
-                        <Badge className={`text-xs ${statusColors[p.internal_status] || ""}`}>
+                        <Badge className={`text-xs ${statusColors[p.internal_status] || "bg-muted text-muted-foreground"}`}>
                           {internalStatusLabels[p.internal_status] || p.internal_status}
                         </Badge>
                       </TableCell>
@@ -211,8 +265,35 @@ const ProposalsPage = () => {
                           {bankStatusLabels[p.bank_status] || p.bank_status}
                         </Badge>
                       </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs font-mono">
+                        {p.protocolo_banco || "—"}
+                      </TableCell>
                       <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                         {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {canEditProposal(p) && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7"
+                              onClick={() => { setEditProposal(p); setEditStatus(p.internal_status); }}>
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {canDeleteProposal() && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                              onClick={() => setDeleteId(p.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {isFactaBank(p) && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary"
+                              title="Enviar para Facta"
+                              disabled={sendToFacta.isPending}
+                              onClick={() => sendToFacta.mutate(p.id)}>
+                              <Send className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -222,6 +303,69 @@ const ProposalsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Status Dialog */}
+      <Dialog open={!!editProposal} onOpenChange={() => setEditProposal(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Status da Proposta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Cliente</Label>
+              <p className="text-sm font-medium">{editProposal?.clients?.full_name}</p>
+            </div>
+            <div>
+              <Label>Status Interno</Label>
+              <Select value={editStatus} onValueChange={setEditStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {internalStatusOptions.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {editProposal?.protocolo_banco && (
+              <div>
+                <Label>Protocolo Banco</Label>
+                <p className="text-sm font-mono">{editProposal.protocolo_banco}</p>
+              </div>
+            )}
+            {editProposal?.erro_banco && (
+              <div>
+                <Label>Último Erro</Label>
+                <p className="text-sm text-destructive">{editProposal.erro_banco}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditProposal(null)}>Cancelar</Button>
+            <Button onClick={() => updateProposal.mutate({ id: editProposal.id, status: editStatus })}
+              disabled={updateProposal.isPending}>
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir proposta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A proposta será removida permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteProposal.mutate(deleteId)}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };
