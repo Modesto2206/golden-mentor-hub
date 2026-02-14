@@ -133,8 +133,10 @@ Deno.serve(async (req) => {
 
     console.log("Empresa criada:", company.id, company.name);
 
-    // 7. Create admin user
-    console.log("Criando admin:", admin_email);
+    // 7. Create or find admin user
+    console.log("Criando/buscando admin:", admin_email);
+    let adminUserId: string;
+
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: admin_email,
       password: admin_password,
@@ -143,29 +145,38 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      console.error("Erro ao criar admin:", createError);
-      // Rollback: delete the company
-      await supabaseAdmin.from("companies").delete().eq("id", company.id);
-      console.log("Rollback: empresa removida");
-      return jsonResponse(
-        { success: false, error: `Erro ao criar administrador: ${createError.message}` },
-        400
-      );
-    }
-
-    if (!newUser?.user) {
+      if (createError.message?.includes("already been registered")) {
+        console.log("Admin já existe, buscando usuário existente...");
+        const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+        const existingUser = usersData?.users?.find((u: any) => u.email === admin_email);
+        if (!existingUser) {
+          await supabaseAdmin.from("companies").delete().eq("id", company.id);
+          return jsonResponse({ success: false, error: "Usuário admin não encontrado." }, 400);
+        }
+        adminUserId = existingUser.id;
+        console.log("Admin existente vinculado:", adminUserId);
+      } else {
+        console.error("Erro ao criar admin:", createError);
+        await supabaseAdmin.from("companies").delete().eq("id", company.id);
+        return jsonResponse(
+          { success: false, error: `Erro ao criar administrador: ${createError.message}` },
+          400
+        );
+      }
+    } else if (!newUser?.user) {
       await supabaseAdmin.from("companies").delete().eq("id", company.id);
       return jsonResponse({ success: false, error: "Falha ao criar usuário administrador" }, 500);
+    } else {
+      adminUserId = newUser.user.id;
+      console.log("Admin criado:", adminUserId);
     }
 
-    console.log("Admin criado:", newUser.user.id);
-
-    // 8. Assign role
-    const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
-      user_id: newUser.user.id,
+    // 8. Assign role (upsert to avoid duplicates)
+    const { error: roleError } = await supabaseAdmin.from("user_roles").upsert({
+      user_id: adminUserId,
       role: "administrador",
       company_id: company.id,
-    });
+    }, { onConflict: "user_id" });
 
     if (roleError) {
       console.error("Erro ao atribuir role:", roleError);
@@ -175,13 +186,13 @@ Deno.serve(async (req) => {
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .eq("user_id", newUser.user.id)
+      .eq("user_id", adminUserId)
       .maybeSingle();
 
     if (!existingProfile) {
       console.log("Criando perfil manualmente");
       await supabaseAdmin.from("profiles").insert({
-        user_id: newUser.user.id,
+        user_id: adminUserId,
         email: admin_email,
         full_name: admin_name,
         company_id: company.id,
@@ -190,13 +201,13 @@ Deno.serve(async (req) => {
       await supabaseAdmin
         .from("profiles")
         .update({ company_id: company.id })
-        .eq("user_id", newUser.user.id);
+        .eq("user_id", adminUserId);
     }
 
     console.log("Empresa e admin criados com sucesso:", {
       company_id: company.id,
       company_name: company.name,
-      admin_id: newUser.user.id,
+      admin_id: adminUserId,
     });
 
     return jsonResponse({
