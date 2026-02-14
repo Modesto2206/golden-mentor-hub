@@ -199,7 +199,21 @@ const Auth = () => {
         },
       });
 
-      if (fnError) throw fnError;
+      // Handle edge function errors - extract message from response body
+      if (fnError) {
+        // Try to parse the error context for a meaningful message
+        const errorBody = (fnError as any)?.context?.body;
+        if (errorBody) {
+          try {
+            const parsed = typeof errorBody === 'string' ? JSON.parse(errorBody) : errorBody;
+            if (parsed?.error) throw new Error(parsed.error);
+          } catch (parseErr) {
+            if (parseErr instanceof SyntaxError) throw fnError;
+            throw parseErr;
+          }
+        }
+        throw fnError;
+      }
       if (result && !result.success) throw new Error(result.error);
 
       toast({
