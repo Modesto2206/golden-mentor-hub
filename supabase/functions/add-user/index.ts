@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, role, full_name, phone } = await req.json();
+    const { email, password, role, full_name, phone, company_id } = await req.json();
     console.log(`Creating user: ${email} with role: ${role}`);
 
     // Validate inputs
@@ -112,6 +112,7 @@ Deno.serve(async (req) => {
       const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
         user_id: newUser.user.id,
         role,
+        company_id: company_id || null,
       });
 
       if (roleError) {
@@ -133,9 +134,16 @@ Deno.serve(async (req) => {
           email,
           full_name,
           phone: phone || null,
+          company_id: company_id || null,
         });
-      } else if (phone) {
-        await supabaseAdmin.from("profiles").update({ phone }).eq("user_id", newUser.user.id);
+      } else {
+        // Update profile with company_id and phone if provided
+        const updates: Record<string, any> = {};
+        if (company_id) updates.company_id = company_id;
+        if (phone) updates.phone = phone;
+        if (Object.keys(updates).length > 0) {
+          await supabaseAdmin.from("profiles").update(updates).eq("user_id", newUser.user.id);
+        }
       }
 
       return new Response(
