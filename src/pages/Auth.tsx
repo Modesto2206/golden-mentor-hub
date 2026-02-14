@@ -185,36 +185,27 @@ const Auth = () => {
   const handleCreateCompany = async (data: AddCompanyFormData) => {
     setIsAuthenticating(true);
     try {
-      // Create company
-      const { data: company, error: companyError } = await supabase
-        .from("companies")
-        .insert({
-          name: data.company_name,
-          cnpj: data.cnpj?.replace(/\D/g, "") || null,
-          email: data.company_email || null,
-          phone: data.company_phone?.replace(/\D/g, "") || null,
-          responsavel: data.responsavel || null,
-          plano: data.plano || "basico",
-        } as any)
-        .select()
-        .single();
-      if (companyError) throw companyError;
-
-      // Create admin user via edge function
-      const { data: result, error: fnError } = await supabase.functions.invoke("add-user", {
+      const { data: result, error: fnError } = await supabase.functions.invoke("create-company", {
         body: {
-          email: data.admin_email,
-          password: data.admin_password,
-          full_name: data.admin_name,
-          role: "administrador",
-          company_id: company.id,
+          company_name: data.company_name,
+          cnpj: data.cnpj,
+          company_email: data.company_email,
+          company_phone: data.company_phone,
+          responsavel: data.responsavel,
+          plano: data.plano,
+          admin_email: data.admin_email,
+          admin_password: data.admin_password,
+          admin_name: data.admin_name,
         },
       });
 
       if (fnError) throw fnError;
       if (result && !result.success) throw new Error(result.error);
 
-      toast({ title: "Empresa criada!", description: `${data.company_name} está pronta para uso.` });
+      toast({
+        title: "Empresa criada!",
+        description: result?.message || `${data.company_name} está pronta para uso.`,
+      });
       setShowAddCompany(false);
       setAuthStep("auth");
       setAddCompanyAuth(null);
@@ -222,7 +213,12 @@ const Auth = () => {
       authForm.reset();
       fetchCompanies();
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro", description: err.message });
+      const errorMessage = err?.message || "Erro desconhecido ao criar empresa";
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar empresa",
+        description: errorMessage,
+      });
     } finally {
       setIsAuthenticating(false);
     }
