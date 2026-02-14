@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LogIn, Mail, Lock, ArrowLeft, Building2, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -380,7 +381,7 @@ const Auth = () => {
                 Apenas o Super Admin pode criar novas empresas. Informe suas credenciais.
               </p>
               <div>
-                <FormLabel>Email</FormLabel>
+                <Label className="text-sm font-medium">Email</Label>
                 <Input
                   type="email"
                   placeholder="super@admin.com"
@@ -388,7 +389,7 @@ const Auth = () => {
                 />
               </div>
               <div>
-                <FormLabel>Senha</FormLabel>
+                <Label className="text-sm font-medium">Senha</Label>
                 <Input
                   type="password"
                   placeholder="••••••••"
