@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, role, full_name } = await req.json();
+    const { email, password, role, full_name, phone } = await req.json();
     console.log(`Creating user: ${email} with role: ${role}`);
 
     // Validate inputs
@@ -132,7 +132,10 @@ Deno.serve(async (req) => {
           user_id: newUser.user.id,
           email,
           full_name,
+          phone: phone || null,
         });
+      } else if (phone) {
+        await supabaseAdmin.from("profiles").update({ phone }).eq("user_id", newUser.user.id);
       }
 
       return new Response(

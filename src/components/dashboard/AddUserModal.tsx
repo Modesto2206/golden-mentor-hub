@@ -16,6 +16,7 @@ const userSchema = z.object({
   email: z.string().email("Email inválido").max(255),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres").max(100),
   full_name: z.string().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
+  phone: z.string().max(20).optional().or(z.literal("")),
   role: z.enum(["vendedor", "administrador"]),
 });
 
@@ -33,6 +34,7 @@ const AddUserModal = () => {
       email: "",
       password: "",
       full_name: "",
+      phone: "",
       role: "vendedor",
     },
   });
@@ -106,6 +108,20 @@ const AddUserModal = () => {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input {...field} type="email" placeholder="email@exemplo.com" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="tel" placeholder="(00) 00000-0000" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

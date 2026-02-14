@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Plus, Search, Download, Trash2, Edit, Send
 } from "lucide-react";
@@ -70,6 +71,7 @@ const formatCurrency = (v: number) => new Intl.NumberFormat("pt-BR", { style: "c
 const ProposalsPage = () => {
   const navigate = useNavigate();
   const { companyId, isAdmin, user } = useAuth();
+  const { canCreate, canUpdate, canDelete } = usePermissions("propostas");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -151,8 +153,8 @@ const ProposalsPage = () => {
   const totalProposals = proposals.length;
   const approvedCount = proposals.filter((p: any) => p.internal_status === "aprovada").length;
 
-  const canEditProposal = (p: any) => isAdmin || p.seller_id === user?.id;
-  const canDeleteProposal = () => isAdmin;
+  const canEditProposal = (p: any) => canUpdate && (isAdmin || p.seller_id === user?.id);
+  const canDeleteProposal = () => canDelete;
   const isFactaBank = (p: any) => p.banks?.possui_api === true && p.banks?.name?.toLowerCase().includes("facta");
 
   return (
@@ -161,9 +163,11 @@ const ProposalsPage = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-bold text-gold-gradient">Propostas</h1>
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => navigate("/propostas/nova")}>
-              <Plus className="w-4 h-4 mr-2" />Nova Proposta
-            </Button>
+            {canCreate && (
+              <Button onClick={() => navigate("/propostas/nova")}>
+                <Plus className="w-4 h-4 mr-2" />Nova Proposta
+              </Button>
+            )}
             <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />Exportar
             </Button>
