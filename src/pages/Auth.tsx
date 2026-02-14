@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, Mail, Lock, ArrowLeft } from "lucide-react";
+import { LogIn, Mail, Lock, ArrowLeft, Building2, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }).max(255),
@@ -18,18 +21,46 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+const addCompanySchema = z.object({
+  company_name: z.string().min(2, "Nome da empresa é obrigatório").max(200),
+  admin_email: z.string().email("Email inválido").max(255),
+  admin_password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres").max(100),
+  admin_name: z.string().min(2, "Nome do admin é obrigatório").max(200),
+});
+
+type AddCompanyFormData = z.infer<typeof addCompanySchema>;
+
+interface Company {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [showCompanyList, setShowCompanyList] = useState(false);
+  const [showAddCompany, setShowAddCompany] = useState(false);
+  const [addCompanyAuth, setAddCompanyAuth] = useState<{ email: string; password: string } | null>(null);
+  const [authStep, setAuthStep] = useState<"auth" | "form">("auth");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, signIn, isLoading: authLoading } = useAuth();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
+  });
+
+  const companyForm = useForm<AddCompanyFormData>({
+    resolver: zodResolver(addCompanySchema),
+    defaultValues: { company_name: "", admin_email: "", admin_password: "", admin_name: "" },
+  });
+
+  const authForm = useForm<{ email: string; password: string }>({
+    defaultValues: { email: "", password: "" },
   });
 
   useEffect(() => {
@@ -38,49 +69,124 @@ const Auth = () => {
     }
   }, [user, role, authLoading, navigate]);
 
+  // Fetch companies for selection
+  const fetchCompanies = async () => {
+    const { data, error } = await supabase.from("companies").select("id, name, is_active").order("name");
+    if (!error && data) {
+      setCompanies(data);
+    }
+  };
+
+  // Realtime subscription for companies
+  useEffect(() => {
+    fetchCompanies();
+    const channel = supabase
+      .channel("companies-auth")
+      .on("postgres_changes", { event: "*", schema: "public", table: "companies" }, () => {
+        fetchCompanies();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    
     try {
       const { error } = await signIn(data.email, data.password);
-
       if (error) {
         let message = "Erro ao fazer login. Verifique suas credenciais.";
-        
         if (error.message.includes("Invalid login credentials")) {
           message = "Email ou senha incorretos.";
         } else if (error.message.includes("Email not confirmed")) {
           message = "Por favor, confirme seu email antes de fazer login.";
         }
-
-        toast({
-          variant: "destructive",
-          title: "Erro no login",
-          description: message,
-        });
+        toast({ variant: "destructive", title: "Erro no login", description: message });
         return;
       }
-
-      toast({
-        title: "Login realizado!",
-        description: "Bem-vindo à área do vendedor.",
-      });
-
+      toast({ title: "Login realizado!", description: "Bem-vindo à plataforma." });
       navigate("/dashboard");
-    } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-      });
+    } catch {
+      toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Validate super_admin before allowing company creation
+  const handleAuthForAddCompany = async (data: { email: string; password: string }) => {
+    setIsAuthenticating(true);
+    try {
+      // Temporarily sign in to validate
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (error) throw new Error("Credenciais inválidas.");
+
+      // Check if user is super_admin (raiz or admin_global)
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", authData.user.id)
+        .maybeSingle();
+
+      if (!roleData || !["raiz", "admin_global"].includes(roleData.role)) {
+        await supabase.auth.signOut();
+        throw new Error("Apenas o Super Admin pode criar empresas.");
+      }
+
+      setAddCompanyAuth({ email: data.email, password: data.password });
+      setAuthStep("form");
+      toast({ title: "Autenticado!", description: "Preencha os dados da nova empresa." });
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message });
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleCreateCompany = async (data: AddCompanyFormData) => {
+    setIsAuthenticating(true);
+    try {
+      // Create company
+      const { data: company, error: companyError } = await supabase
+        .from("companies")
+        .insert({ name: data.company_name })
+        .select()
+        .single();
+      if (companyError) throw companyError;
+
+      // Create admin user via edge function
+      const { data: result, error: fnError } = await supabase.functions.invoke("add-user", {
+        body: {
+          email: data.admin_email,
+          password: data.admin_password,
+          full_name: data.admin_name,
+          role: "administrador",
+          company_id: company.id,
+        },
+      });
+
+      if (fnError) throw fnError;
+      if (result && !result.success) throw new Error(result.error);
+
+      toast({ title: "Empresa criada!", description: `${data.company_name} está pronta para uso.` });
+      setShowAddCompany(false);
+      setAuthStep("auth");
+      setAddCompanyAuth(null);
+      companyForm.reset();
+      authForm.reset();
+      fetchCompanies();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Erro", description: err.message });
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background bg-pattern flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-4">
         <Button
           variant="ghost"
           onClick={() => navigate("/")}
@@ -89,6 +195,17 @@ const Auth = () => {
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar ao Painel
         </Button>
+
+        {/* Selected Company Badge */}
+        {selectedCompany && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/10 border border-primary/30">
+            <Building2 className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">{selectedCompany.name}</span>
+            <Badge variant={selectedCompany.is_active ? "default" : "secondary"} className="text-xs ml-auto">
+              {selectedCompany.is_active ? "Ativo" : "Suspenso"}
+            </Badge>
+          </div>
+        )}
 
         <Card className="border-primary/30 shadow-lg shadow-primary/10">
           <CardHeader className="space-y-4 text-center">
@@ -100,7 +217,27 @@ const Auth = () => {
               Acesso exclusivo para vendedores e gestão comercial
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Company Selection Buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => setShowCompanyList(true)}
+              >
+                <Building2 className="w-4 h-4" />
+                Selecionar Empresa
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => { setShowAddCompany(true); setAuthStep("auth"); }}
+              >
+                <Plus className="w-4 h-4" />
+                Adicionar Empresa
+              </Button>
+            </div>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -112,20 +249,13 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="seu@email.com"
-                            className="pl-10"
-                            disabled={isLoading}
-                          />
+                          <Input {...field} type="email" placeholder="seu@email.com" className="pl-10" disabled={isLoading} />
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="password"
@@ -135,36 +265,142 @@ const Auth = () => {
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            {...field}
-                            type="password"
-                            placeholder="••••••••"
-                            className="pl-10"
-                            disabled={isLoading}
-                          />
+                          <Input {...field} type="password" placeholder="••••••••" className="pl-10" disabled={isLoading} />
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
             </Form>
-
-            <p className="mt-6 text-center text-xs text-muted-foreground/70">
+            <p className="text-center text-xs text-muted-foreground/70">
               Acesso restrito a usuários autorizados
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Company Selection Dialog */}
+      <Dialog open={showCompanyList} onOpenChange={setShowCompanyList}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Selecionar Empresa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {companies.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma empresa cadastrada</p>
+            ) : (
+              companies.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => { setSelectedCompany(c); setShowCompanyList(false); }}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left
+                    ${selectedCompany?.id === c.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50 hover:bg-secondary/50"
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{c.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={c.is_active ? "default" : "secondary"} className="text-xs">
+                      {c.is_active ? "Ativo" : "Suspenso"}
+                    </Badge>
+                    {selectedCompany?.id === c.id && <Check className="w-4 h-4 text-primary" />}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Company Dialog */}
+      <Dialog open={showAddCompany} onOpenChange={(open) => {
+        setShowAddCompany(open);
+        if (!open) { setAuthStep("auth"); setAddCompanyAuth(null); authForm.reset(); companyForm.reset(); }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{authStep === "auth" ? "Autenticação Necessária" : "Nova Empresa"}</DialogTitle>
+          </DialogHeader>
+
+          {authStep === "auth" ? (
+            <form onSubmit={authForm.handleSubmit(handleAuthForAddCompany)} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Apenas o Super Admin pode criar novas empresas. Informe suas credenciais.
+              </p>
+              <div>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  type="email"
+                  placeholder="super@admin.com"
+                  {...authForm.register("email", { required: true })}
+                />
+              </div>
+              <div>
+                <FormLabel>Senha</FormLabel>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  {...authForm.register("password", { required: true })}
+                />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowAddCompany(false)}>Cancelar</Button>
+                <Button type="submit" disabled={isAuthenticating}>
+                  {isAuthenticating ? "Verificando..." : "Verificar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <Form {...companyForm}>
+              <form onSubmit={companyForm.handleSubmit(handleCreateCompany)} className="space-y-4">
+                <FormField control={companyForm.control} name="company_name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome da Empresa</FormLabel>
+                    <FormControl><Input {...field} placeholder="Nome da empresa" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={companyForm.control} name="admin_name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Administrador</FormLabel>
+                    <FormControl><Input {...field} placeholder="Nome completo" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={companyForm.control} name="admin_email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email do Administrador</FormLabel>
+                    <FormControl><Input {...field} type="email" placeholder="admin@empresa.com" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={companyForm.control} name="admin_password" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha do Administrador</FormLabel>
+                    <FormControl><Input {...field} type="password" placeholder="Mínimo 8 caracteres" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => { setAuthStep("auth"); setAddCompanyAuth(null); }}>Voltar</Button>
+                  <Button type="submit" disabled={isAuthenticating}>
+                    {isAuthenticating ? "Criando..." : "Criar Empresa"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
