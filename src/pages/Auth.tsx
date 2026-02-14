@@ -220,7 +220,8 @@ const Auth = () => {
       setAddCompanyAuth(null);
       companyForm.reset();
       authForm.reset();
-      fetchCompanies();
+      await fetchCompanies();
+      setShowCompanyList(true);
     } catch (err: any) {
       const errorMessage = err?.message || "Erro desconhecido ao criar empresa";
       sonnerToast.error(errorMessage);
