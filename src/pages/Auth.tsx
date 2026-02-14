@@ -70,10 +70,10 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (!authLoading && user && role) {
+    if (!authLoading && user && role && !showAddCompany) {
       navigate("/dashboard");
     }
-  }, [user, role, authLoading, navigate]);
+  }, [user, role, authLoading, navigate, showAddCompany]);
 
   // Fetch companies for selection
   const fetchCompanies = async () => {
