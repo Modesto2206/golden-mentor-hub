@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -174,9 +175,9 @@ const Auth = () => {
 
       setAddCompanyAuth({ email: data.email, password: data.password });
       setAuthStep("form");
-      toast({ title: "Autenticado!", description: "Preencha os dados da nova empresa." });
+      sonnerToast.success("Autenticado! Preencha os dados da nova empresa.");
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro", description: err.message });
+      sonnerToast.error(err.message || "Erro na autenticação");
     } finally {
       setIsAuthenticating(false);
     }
@@ -201,25 +202,19 @@ const Auth = () => {
 
       // Handle edge function errors - extract message from response body
       if (fnError) {
-        // Try to parse the error context for a meaningful message
-        const errorBody = (fnError as any)?.context?.body;
-        if (errorBody) {
-          try {
-            const parsed = typeof errorBody === 'string' ? JSON.parse(errorBody) : errorBody;
-            if (parsed?.error) throw new Error(parsed.error);
-          } catch (parseErr) {
-            if (parseErr instanceof SyntaxError) throw fnError;
-            throw parseErr;
-          }
+        let errorMessage = "Erro ao criar empresa";
+        try {
+          // fnError.message contains the response body text in supabase-js
+          const parsed = JSON.parse(fnError.message);
+          if (parsed?.error) errorMessage = parsed.error;
+        } catch {
+          errorMessage = fnError.message || errorMessage;
         }
-        throw fnError;
+        throw new Error(errorMessage);
       }
       if (result && !result.success) throw new Error(result.error);
 
-      toast({
-        title: "Empresa criada!",
-        description: result?.message || `${data.company_name} está pronta para uso.`,
-      });
+      sonnerToast.success(result?.message || `${data.company_name} está pronta para uso.`);
       setShowAddCompany(false);
       setAuthStep("auth");
       setAddCompanyAuth(null);
@@ -228,11 +223,7 @@ const Auth = () => {
       fetchCompanies();
     } catch (err: any) {
       const errorMessage = err?.message || "Erro desconhecido ao criar empresa";
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar empresa",
-        description: errorMessage,
-      });
+      sonnerToast.error(errorMessage);
     } finally {
       setIsAuthenticating(false);
     }
