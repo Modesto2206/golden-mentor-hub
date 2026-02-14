@@ -23,6 +23,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 const addCompanySchema = z.object({
   company_name: z.string().min(2, "Nome da empresa é obrigatório").max(200),
+  cnpj: z.string().min(14, "CNPJ é obrigatório").max(18),
+  company_email: z.string().email("Email inválido").max(255),
+  company_phone: z.string().min(10, "Telefone é obrigatório").max(20),
+  responsavel: z.string().min(2, "Nome do responsável é obrigatório").max(200),
+  plano: z.string().min(1, "Plano é obrigatório").max(100),
   admin_email: z.string().email("Email inválido").max(255),
   admin_password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres").max(100),
   admin_name: z.string().min(2, "Nome do admin é obrigatório").max(200),
@@ -56,7 +61,7 @@ const Auth = () => {
 
   const companyForm = useForm<AddCompanyFormData>({
     resolver: zodResolver(addCompanySchema),
-    defaultValues: { company_name: "", admin_email: "", admin_password: "", admin_name: "" },
+    defaultValues: { company_name: "", cnpj: "", company_email: "", company_phone: "", responsavel: "", plano: "basico", admin_email: "", admin_password: "", admin_name: "" },
   });
 
   const authForm = useForm<{ email: string; password: string }>({
@@ -92,6 +97,13 @@ const Auth = () => {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
+      // Block if selected company is suspended
+      if (selectedCompany && !selectedCompany.is_active) {
+        toast({ variant: "destructive", title: "Empresa suspensa", description: "Empresa suspensa. Entre em contato com o suporte." });
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await signIn(data.email, data.password);
       if (error) {
         let message = "Erro ao fazer login. Verifique suas credenciais.";
@@ -103,6 +115,30 @@ const Auth = () => {
         toast({ variant: "destructive", title: "Erro no login", description: message });
         return;
       }
+
+      // After login, check if user's company is suspended
+      const { data: { user: loggedUser } } = await supabase.auth.getUser();
+      if (loggedUser) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("company_id")
+          .eq("user_id", loggedUser.id)
+          .maybeSingle();
+        if (profile?.company_id) {
+          const { data: company } = await supabase
+            .from("companies")
+            .select("is_active")
+            .eq("id", profile.company_id)
+            .maybeSingle();
+          if (company && !company.is_active) {
+            await supabase.auth.signOut();
+            toast({ variant: "destructive", title: "Empresa suspensa", description: "Empresa suspensa. Entre em contato com o suporte." });
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
       toast({ title: "Login realizado!", description: "Bem-vindo à plataforma." });
       navigate("/dashboard");
     } catch {
@@ -151,7 +187,14 @@ const Auth = () => {
       // Create company
       const { data: company, error: companyError } = await supabase
         .from("companies")
-        .insert({ name: data.company_name })
+        .insert({
+          name: data.company_name,
+          cnpj: data.cnpj?.replace(/\D/g, "") || null,
+          email: data.company_email || null,
+          phone: data.company_phone?.replace(/\D/g, "") || null,
+          responsavel: data.responsavel || null,
+          plano: data.plano || "basico",
+        } as any)
         .select()
         .single();
       if (companyError) throw companyError;
@@ -361,35 +404,77 @@ const Auth = () => {
             </form>
           ) : (
             <Form {...companyForm}>
-              <form onSubmit={companyForm.handleSubmit(handleCreateCompany)} className="space-y-4">
+              <form onSubmit={companyForm.handleSubmit(handleCreateCompany)} className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                 <FormField control={companyForm.control} name="company_name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome da Empresa</FormLabel>
+                    <FormLabel>Nome da Empresa *</FormLabel>
                     <FormControl><Input {...field} placeholder="Nome da empresa" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={companyForm.control} name="admin_name" render={({ field }) => (
+                <FormField control={companyForm.control} name="cnpj" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome do Administrador</FormLabel>
-                    <FormControl><Input {...field} placeholder="Nome completo" /></FormControl>
+                    <FormLabel>CNPJ *</FormLabel>
+                    <FormControl><Input {...field} placeholder="00.000.000/0000-00" maxLength={18} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={companyForm.control} name="admin_email" render={({ field }) => (
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={companyForm.control} name="company_email" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email da Empresa *</FormLabel>
+                      <FormControl><Input {...field} type="email" placeholder="empresa@email.com" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={companyForm.control} name="company_phone" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone *</FormLabel>
+                      <FormControl><Input {...field} placeholder="(00) 00000-0000" maxLength={15} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={companyForm.control} name="responsavel" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email do Administrador</FormLabel>
-                    <FormControl><Input {...field} type="email" placeholder="admin@empresa.com" /></FormControl>
+                    <FormLabel>Nome do Responsável *</FormLabel>
+                    <FormControl><Input {...field} placeholder="Nome do responsável" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={companyForm.control} name="admin_password" render={({ field }) => (
+                <FormField control={companyForm.control} name="plano" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha do Administrador</FormLabel>
-                    <FormControl><Input {...field} type="password" placeholder="Mínimo 8 caracteres" /></FormControl>
+                    <FormLabel>Plano *</FormLabel>
+                    <FormControl><Input {...field} placeholder="Ex: básico, premium" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
+                <div className="border-t pt-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">Administrador da Empresa</p>
+                  <div className="space-y-4">
+                    <FormField control={companyForm.control} name="admin_name" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Administrador *</FormLabel>
+                        <FormControl><Input {...field} placeholder="Nome completo" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={companyForm.control} name="admin_email" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email do Administrador *</FormLabel>
+                        <FormControl><Input {...field} type="email" placeholder="admin@empresa.com" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={companyForm.control} name="admin_password" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha do Administrador *</FormLabel>
+                        <FormControl><Input {...field} type="password" placeholder="Mínimo 8 caracteres" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => { setAuthStep("auth"); setAddCompanyAuth(null); }}>Voltar</Button>
                   <Button type="submit" disabled={isAuthenticating}>

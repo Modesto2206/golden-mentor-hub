@@ -273,8 +273,8 @@ const ClientsPage = () => {
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>CPF</TableHead>
-                    <TableHead className="hidden md:table-cell">Telefone</TableHead>
-                    <TableHead className="hidden md:table-cell">Cidade/UF</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead className="hidden md:table-cell">Nascimento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Contato</TableHead>
                   </TableRow>
@@ -286,9 +286,9 @@ const ClientsPage = () => {
                       <TableRow key={client.id}>
                         <TableCell className="font-medium">{client.full_name}</TableCell>
                         <TableCell className="font-mono text-xs">{maskCPF(client.cpf)}</TableCell>
-                        <TableCell className="hidden md:table-cell">{client.phone || "—"}</TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {client.address_city ? `${client.address_city}/${client.address_state}` : "—"}
+                        <TableCell>{client.phone ? formatPhone(client.phone) : "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell text-sm">
+                          {client.birth_date ? new Date(client.birth_date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
                         </TableCell>
                         <TableCell>
                           <Badge variant={client.is_active ? "default" : "secondary"} className="text-xs">
