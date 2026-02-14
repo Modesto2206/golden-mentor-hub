@@ -61,9 +61,13 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
 
   const calculatedCommission = (watchValue || 0) * ((watchPercentage || 0) / 100);
 
+  // Title Case helper
+  const toTitleCase = (str: string) =>
+    str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+
   const handleSubmit = (data: SaleFormData) => {
     const saleData: CreateSaleData = {
-      client_name: data.client_name,
+      client_name: toTitleCase(data.client_name),
       covenant_type: data.covenant_type,
       operation_type: data.operation_type || undefined,
       financial_institution: data.financial_institution || undefined,
