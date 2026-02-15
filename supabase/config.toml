@@ -1,8 +1,5 @@
 project_id = "hfsblachionqagqxqgxx"
 
-[functions.setup-users]
-verify_jwt = false
-
 [functions.add-user]
 verify_jwt = false
 
