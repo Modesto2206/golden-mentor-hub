@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import authHero from "@/assets/auth-hero.png";
+const authHero = "/images/auth-hero.png";
 import logoFull from "@/assets/logo-credmais-full.png";
 
 const loginSchema = z.object({
