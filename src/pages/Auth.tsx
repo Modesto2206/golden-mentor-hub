@@ -48,9 +48,10 @@ const Auth = () => {
     defaultValues: { full_name: "", email: "", password: "", confirm_password: "" },
   });
 
+  // Redirect when auth is fully loaded with role
   useEffect(() => {
     if (!authLoading && user && role) {
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }
   }, [user, role, authLoading, navigate]);
 
@@ -93,7 +94,7 @@ const Auth = () => {
       }
 
       toast({ title: "Login realizado!", description: "Bem-vindo à plataforma." });
-      navigate("/dashboard");
+      // Don't navigate here - let the useEffect handle it after AuthContext loads role
     } catch {
       toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
     } finally {
@@ -143,7 +144,7 @@ const Auth = () => {
       // Auto login after successful signup
       if (signUpData.session) {
         toast({ title: "Cadastro realizado!", description: "Bem-vindo à plataforma." });
-        navigate("/dashboard");
+        // Don't navigate here - let the useEffect handle it after AuthContext provisions and loads role
       } else {
         // Email confirmation required
         toast({
