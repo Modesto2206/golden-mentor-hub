@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import authHero from "@/assets/auth-hero.png";
-import logoFull from "@/assets/logo-credmais-light.png";
+import logoFull from "@/assets/logo-credmais-full.png";
 
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }).max(255),
@@ -158,7 +158,7 @@ const Auth = () => {
         <div className="w-full max-w-md mx-auto">
           {/* Logo */}
           <div className="mb-10">
-            <img src={logoFull} alt="Cred+ Consignado" className="h-24 sm:h-28 lg:h-32 w-auto max-w-full object-contain" />
+            <img src={logoFull} alt="Cred+ Consignado" className="h-20 sm:h-24 lg:h-28 w-auto max-w-[80%] object-contain" />
           </div>
 
           {mode === "forgot" && (
