@@ -2,10 +2,11 @@ import { ReactNode, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
   LogOut, Shield, User, ChevronLeft, ChevronRight,
-  Landmark, ShoppingBag
+  Landmark, ShoppingBag, Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ const navItems: NavItem[] = [
   { label: "Clientes", icon: <Users className="w-5 h-5" />, href: "/clientes" },
   { label: "Bancos", icon: <Landmark className="w-5 h-5" />, href: "/bancos" },
   { label: "Loja", icon: <ShoppingBag className="w-5 h-5" />, href: "/loja" },
+  { label: "Configurações", icon: <Settings className="w-5 h-5" />, href: "/configuracoes", roles: ["administrador", "raiz", "admin_global", "admin_empresa"] },
 ];
 
 const roleLabels: Record<string, string> = {
@@ -54,8 +56,43 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const location = useLocation();
   const { user, role, isLoading, signOut, isAdmin } = useAuth();
   const { resolvedTheme } = useTheme();
+  const { settings: companySettings } = useCompanySettings();
   const [collapsed, setCollapsed] = useState(false);
-  const logo = resolvedTheme === "dark" ? logoFull : logoLight;
+
+  const hasCustomLogo = !!companySettings?.logo_url;
+  const logo = hasCustomLogo ? companySettings.logo_url! : (resolvedTheme === "dark" ? logoFull : logoLight);
+
+  // Apply custom primary color as CSS variable
+  useEffect(() => {
+    if (companySettings?.primary_color) {
+      const hex = companySettings.primary_color;
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      // Convert to HSL
+      const rN = r / 255, gN = g / 255, bN = b / 255;
+      const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN);
+      let h = 0, s = 0;
+      const l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === rN) h = ((gN - bN) / d + (gN < bN ? 6 : 0));
+        else if (max === gN) h = ((bN - rN) / d + 2);
+        else h = ((rN - gN) / d + 4);
+        h *= 60;
+      }
+      document.documentElement.style.setProperty("--primary", `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`);
+      document.documentElement.style.setProperty("--accent", `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`);
+      document.documentElement.style.setProperty("--ring", `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`);
+    }
+    return () => {
+      // Reset on unmount
+      document.documentElement.style.removeProperty("--primary");
+      document.documentElement.style.removeProperty("--accent");
+      document.documentElement.style.removeProperty("--ring");
+    };
+  }, [companySettings?.primary_color]);
 
   useEffect(() => {
     if (!isLoading && (!user || !role)) {
