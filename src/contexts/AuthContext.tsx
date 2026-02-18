@@ -67,15 +67,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const provisionNewUser = async () => {
+    try {
+      const { error } = await supabase.functions.invoke("setup-new-user");
+      if (error) {
+        console.error("Error provisioning user:", error);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Error calling setup-new-user:", err);
+      return false;
+    }
+  };
+
+  const loadUserData = async (userId: string) => {
+    let userData = await fetchUserData(userId);
+
+    // If no role/profile, auto-provision
+    if (!userData.role || !userData.companyId) {
+      const provisioned = await provisionNewUser();
+      if (provisioned) {
+        // Re-fetch after provisioning
+        userData = await fetchUserData(userId);
+      }
+    }
+
+    return userData;
+  };
+
   useEffect(() => {
+    let isMounted = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           setTimeout(() => {
-            fetchUserData(session.user.id).then(({ role, companyId }) => {
+            loadUserData(session.user.id).then(({ role, companyId }) => {
+              if (!isMounted) return;
               setRole(role);
               setCompanyId(companyId);
             });
@@ -88,11 +121,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserData(session.user.id).then(({ role, companyId }) => {
+        loadUserData(session.user.id).then(({ role, companyId }) => {
+          if (!isMounted) return;
           setRole(role);
           setCompanyId(companyId);
           setIsLoading(false);
@@ -102,7 +137,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
