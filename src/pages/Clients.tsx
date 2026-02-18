@@ -16,7 +16,7 @@ import AppLayout from "@/components/AppLayout";
 import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@/components/clients/ClientFormDialog";
 
 const ClientsPage = () => {
-  const { companyId, isAdmin } = useAuth();
+  const { companyId, isAdmin, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -44,6 +44,7 @@ const ClientsPage = () => {
         full_name: data.full_name,
         cpf: data.cpf.replace(/\D/g, ""),
         company_id: companyId!,
+        created_by: user?.id || null,
         email: data.email || null,
         birth_date: data.birth_date || null,
         gender: data.gender || null,
@@ -104,13 +105,13 @@ const ClientsPage = () => {
     setDeletingId(clientId);
     try {
       const { error } = await (supabase.from("clients" as any) as any)
-        .update({ is_active: false })
+        .delete()
         .eq("id", clientId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast({ title: "Cliente desativado com sucesso" });
+      toast({ title: "Cliente excluído com sucesso" });
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Erro ao desativar cliente", description: e.message });
+      toast({ variant: "destructive", title: "Erro ao excluir cliente", description: e.message });
     } finally {
       setDeletingId(null);
       setDeleteConfirmId(null);
@@ -219,14 +220,14 @@ const ClientsPage = () => {
                                 </a>
                               </Button>
                             )}
-                            {isAdmin && client.is_active && (
+                            {(isAdmin || client.created_by === user?.id) && (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="p-1 h-auto text-destructive hover:text-destructive"
                                 onClick={() => setDeleteConfirmId(client.id)}
                                 disabled={deletingId === client.id}
-                                title="Desativar cliente"
+                                title="Excluir cliente"
                               >
                                 {deletingId === client.id ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -275,9 +276,9 @@ const ClientsPage = () => {
       <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Desativar Cliente</AlertDialogTitle>
+            <AlertDialogTitle>Excluir Cliente</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja desativar este cliente? O cliente ficará inativo no sistema mas seus dados serão preservados.
+              Tem certeza que deseja excluir este cliente? Esta ação é permanente e não poderá ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -286,7 +287,7 @@ const ClientsPage = () => {
               onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Desativar
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
