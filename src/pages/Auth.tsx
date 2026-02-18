@@ -3,15 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, UserPlus, Mail, Lock, ArrowLeft, User, KeyRound } from "lucide-react";
+import { Mail, Lock, ArrowLeft, User, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import authHero from "@/assets/auth-hero.png";
+import logoFull from "@/assets/logo-credmais-full.png";
 
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }).max(255),
@@ -33,8 +33,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("login");
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [forgotEmail, setForgotEmail] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -50,7 +49,6 @@ const Auth = () => {
     defaultValues: { full_name: "", email: "", password: "", confirm_password: "" },
   });
 
-  // Redirect when auth is fully loaded with role
   useEffect(() => {
     if (!authLoading && user && role) {
       navigate("/dashboard", { replace: true });
@@ -71,21 +69,11 @@ const Auth = () => {
         toast({ variant: "destructive", title: "Erro no login", description: message });
         return;
       }
-
-      // Check if user's company is suspended
       const { data: { user: loggedUser } } = await supabase.auth.getUser();
       if (loggedUser) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("company_id")
-          .eq("user_id", loggedUser.id)
-          .maybeSingle();
+        const { data: profile } = await supabase.from("profiles").select("company_id").eq("user_id", loggedUser.id).maybeSingle();
         if (profile?.company_id) {
-          const { data: company } = await supabase
-            .from("companies")
-            .select("is_active")
-            .eq("id", profile.company_id)
-            .maybeSingle();
+          const { data: company } = await supabase.from("companies").select("is_active").eq("id", profile.company_id).maybeSingle();
           if (company && !company.is_active) {
             await supabase.auth.signOut();
             toast({ variant: "destructive", title: "Empresa suspensa", description: "Empresa suspensa. Entre em contato com o suporte." });
@@ -94,9 +82,7 @@ const Auth = () => {
           }
         }
       }
-
       toast({ title: "Login realizado!", description: "Bem-vindo à plataforma." });
-      // Don't navigate here - let the useEffect handle it after AuthContext loads role
     } catch {
       toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
     } finally {
@@ -119,7 +105,7 @@ const Auth = () => {
         return;
       }
       toast({ title: "Email enviado!", description: "Verifique sua caixa de entrada para redefinir sua senha." });
-      setShowForgotPassword(false);
+      setMode("login");
     } catch {
       toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
     } finally {
@@ -130,53 +116,32 @@ const Auth = () => {
   const onRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      // Check if email already exists by trying to sign up
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: {
-          data: { full_name: data.full_name },
-        },
+        options: { data: { full_name: data.full_name } },
       });
-
       if (signUpError) {
         if (signUpError.message.includes("already registered") || signUpError.message.includes("already been registered")) {
-          toast({
-            variant: "destructive",
-            title: "Email já cadastrado",
-            description: "Este email já possui uma conta. Faça login.",
-          });
-          setActiveTab("login");
+          toast({ variant: "destructive", title: "Email já cadastrado", description: "Este email já possui uma conta. Faça login." });
+          setMode("login");
           loginForm.setValue("email", data.email);
           return;
         }
         toast({ variant: "destructive", title: "Erro no cadastro", description: signUpError.message });
         return;
       }
-
-      // If user was returned but identities is empty, email already exists
       if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
-        toast({
-          variant: "destructive",
-          title: "Email já cadastrado",
-          description: "Este email já possui uma conta. Faça login.",
-        });
-        setActiveTab("login");
+        toast({ variant: "destructive", title: "Email já cadastrado", description: "Este email já possui uma conta. Faça login." });
+        setMode("login");
         loginForm.setValue("email", data.email);
         return;
       }
-
-      // Auto login after successful signup
       if (signUpData.session) {
         toast({ title: "Cadastro realizado!", description: "Bem-vindo à plataforma." });
-        // Don't navigate here - let the useEffect handle it after AuthContext provisions and loads role
       } else {
-        // Email confirmation required
-        toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu email para confirmar sua conta antes de fazer login.",
-        });
-        setActiveTab("login");
+        toast({ title: "Cadastro realizado!", description: "Verifique seu email para confirmar sua conta antes de fazer login." });
+        setMode("login");
         loginForm.setValue("email", data.email);
       }
     } catch {
@@ -187,210 +152,245 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background bg-pattern flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-4">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="text-muted-foreground hover:text-primary"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar ao Painel
-        </Button>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+      {/* Left side - Form */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 py-12">
+        <div className="w-full max-w-md mx-auto">
+          {/* Logo */}
+          <div className="mb-10">
+            <img src={logoFull} alt="Cred+ Consignado" className="h-10 object-contain" />
+          </div>
 
-        <Card className="border-primary/30 shadow-lg shadow-primary/10">
-          <CardHeader className="space-y-4 text-center">
-            <div className="mx-auto p-3 rounded-full bg-primary/20 w-fit">
-              <LogIn className="w-8 h-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl text-gold-gradient">Cred+ Plataforma</CardTitle>
-            <CardDescription>
-              Acesse sua conta ou cadastre-se para começar
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login" className="gap-2">
-                  <LogIn className="w-4 h-4" />
-                  Entrar
-                </TabsTrigger>
-                <TabsTrigger value="register" className="gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  Cadastrar
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                {showForgotPassword ? (
-                  <div className="space-y-4">
-                    <div className="text-center space-y-2">
-                      <KeyRound className="w-8 h-8 text-primary mx-auto" />
-                      <p className="text-sm text-muted-foreground">
-                        Digite seu email para receber o link de recuperação
-                      </p>
-                    </div>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="seu@email.com"
-                        className="pl-10"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <Button onClick={onForgotPassword} className="w-full" disabled={isLoading}>
-                      {isLoading ? "Enviando..." : "Enviar link de recuperação"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="w-full text-muted-foreground"
-                      onClick={() => setShowForgotPassword(false)}
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Voltar ao login
-                    </Button>
+          {mode === "forgot" && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Recuperar senha</h1>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Digite seu email para receber o link de recuperação
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="Digite seu email"
+                      className="pl-10 h-12 border-border"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      disabled={isLoading}
+                    />
                   </div>
-                ) : (
-                  <>
-                    <Form {...loginForm}>
-                      <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-                        <FormField
-                          control={loginForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                  <Input {...field} type="email" placeholder="seu@email.com" className="pl-10" disabled={isLoading} />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={loginForm.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <div className="flex items-center justify-between">
-                                <FormLabel>Senha</FormLabel>
-                                <Button
-                                  type="button"
-                                  variant="link"
-                                  className="text-xs text-primary p-0 h-auto"
-                                  onClick={() => {
-                                    setForgotEmail(loginForm.getValues("email"));
-                                    setShowForgotPassword(true);
-                                  }}
-                                >
-                                  Esqueci minha senha
-                                </Button>
-                              </div>
-                              <FormControl>
-                                <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                  <Input {...field} type="password" placeholder="••••••••" className="pl-10" disabled={isLoading} />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                          {isLoading ? "Entrando..." : "Entrar"}
-                        </Button>
-                      </form>
-                    </Form>
-                  </>
-                )}
-              </TabsContent>
+                </div>
+                <Button onClick={onForgotPassword} className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                  {isLoading ? "Enviando..." : "Enviar link de recuperação"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setMode("login")}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar ao login
+                </Button>
+              </div>
+            </div>
+          )}
 
-              <TabsContent value="register">
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                    <FormField
-                      control={registerForm.control}
-                      name="full_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome Completo</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                              <Input {...field} placeholder="Seu nome completo" className="pl-10" disabled={isLoading} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                              <Input {...field} type="email" placeholder="seu@email.com" className="pl-10" disabled={isLoading} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
+          {mode === "login" && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Entrar</h1>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Escolha como deseja entrar na sua conta
+                </p>
+              </div>
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                  <FormField
+                    control={loginForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="email" placeholder="Digite seu email" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
                           <FormLabel>Senha</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                              <Input {...field} type="password" placeholder="Mínimo 6 caracteres" className="pl-10" disabled={isLoading} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="confirm_password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirmar Senha</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                              <Input {...field} type="password" placeholder="Repita a senha" className="pl-10" disabled={isLoading} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Cadastrando..." : "Criar Conta"}
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
+                          <button
+                            type="button"
+                            className="text-xs text-primary hover:underline font-medium"
+                            onClick={() => {
+                              setForgotEmail(loginForm.getValues("email"));
+                              setMode("forgot");
+                            }}
+                          >
+                            Esqueci minha senha
+                          </button>
+                        </div>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="password" placeholder="••••••••" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                    {isLoading ? "Entrando..." : "Entrar"}
+                  </Button>
+                </form>
+              </Form>
 
-            <p className="text-center text-xs text-muted-foreground/70 mt-4">
-              Ao se cadastrar, você concorda com nossos termos de uso
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full h-12 text-base font-medium border-border"
+                onClick={() => setMode("register")}
+              >
+                Criar uma conta
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground/70">
+                Ao se cadastrar, você concorda com nossos termos de uso
+              </p>
+            </div>
+          )}
+
+          {mode === "register" && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Criar conta</h1>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Preencha seus dados para começar
+                </p>
+              </div>
+              <Form {...registerForm}>
+                <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                  <FormField
+                    control={registerForm.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} placeholder="Seu nome completo" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="email" placeholder="seu@email.com" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="password" placeholder="Mínimo 6 caracteres" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="confirm_password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Senha</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="password" placeholder="Repita a senha" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                    {isLoading ? "Cadastrando..." : "Criar Conta"}
+                  </Button>
+                </form>
+              </Form>
+
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => setMode("login")}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Já tenho uma conta
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right side - Hero Image */}
+      <div className="hidden lg:block lg:w-1/2 xl:w-[55%] relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 z-10" />
+        <img
+          src={authHero}
+          alt="Parceria e confiança"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute bottom-12 left-12 right-12 z-20">
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border/50">
+            <p className="text-lg font-semibold text-foreground">
+              "A plataforma que simplifica o crédito consignado para sua equipe."
             </p>
-          </CardContent>
-        </Card>
+            <p className="text-sm text-muted-foreground mt-2">Cred+ Consignado</p>
+          </div>
+        </div>
       </div>
     </div>
   );
