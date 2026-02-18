@@ -158,7 +158,7 @@ const Auth = () => {
         <div className="w-full max-w-md mx-auto">
           {/* Logo */}
           <div className="mb-10">
-            <img src={logoFull} alt="Cred+ Consignado" className="h-16 object-contain" />
+            <img src={logoFull} alt="Cred+ Consignado" className="h-20 sm:h-24 lg:h-28 w-auto max-w-[80%] object-contain" />
           </div>
 
           {mode === "forgot" && (
