@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, MessageCircle, Pencil } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
@@ -15,13 +16,15 @@ import AppLayout from "@/components/AppLayout";
 import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@/components/clients/ClientFormDialog";
 
 const ClientsPage = () => {
-  const { companyId } = useAuth();
+  const { companyId, isAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", companyId],
@@ -95,6 +98,23 @@ const ClientsPage = () => {
   const handleEdit = (client: any) => {
     setEditingClient(client);
     setEditOpen(true);
+  };
+
+  const handleDelete = async (clientId: string) => {
+    setDeletingId(clientId);
+    try {
+      const { error } = await (supabase.from("clients" as any) as any)
+        .update({ is_active: false })
+        .eq("id", clientId);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast({ title: "Cliente desativado com sucesso" });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Erro ao desativar cliente", description: e.message });
+    } finally {
+      setDeletingId(null);
+      setDeleteConfirmId(null);
+    }
   };
 
   const getEditDefaults = (client: any): Partial<ClientFormData> => ({
@@ -199,6 +219,22 @@ const ClientsPage = () => {
                                 </a>
                               </Button>
                             )}
+                            {isAdmin && client.is_active && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-1 h-auto text-destructive hover:text-destructive"
+                                onClick={() => setDeleteConfirmId(client.id)}
+                                disabled={deletingId === client.id}
+                                title="Desativar cliente"
+                              >
+                                {deletingId === client.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -234,6 +270,27 @@ const ClientsPage = () => {
         title="Editar Cliente"
         submitLabel="Salvar Alterações"
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar Cliente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja desativar este cliente? O cliente ficará inativo no sistema mas seus dados serão preservados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };
