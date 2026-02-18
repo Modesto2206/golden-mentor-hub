@@ -81,15 +81,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loadUserData = async (userId: string) => {
+  const loadUserData = async (userId: string, retries = 0): Promise<{ role: UserRole; companyId: string | null }> => {
     let userData = await fetchUserData(userId);
 
-    // If no role/profile, auto-provision
+    // If no role or no companyId, auto-provision
     if (!userData.role || !userData.companyId) {
       const provisioned = await provisionNewUser();
       if (provisioned) {
         // Re-fetch after provisioning
         userData = await fetchUserData(userId);
+      }
+      // If still incomplete and haven't retried, wait and try once more
+      if ((!userData.role || !userData.companyId) && retries < 1) {
+        await new Promise((r) => setTimeout(r, 1500));
+        return loadUserData(userId, retries + 1);
       }
     }
 

@@ -39,14 +39,17 @@ serve(async (req) => {
     // Use service role to bypass RLS
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Check if user already has a profile
-    const { data: existingProfile } = await adminClient
-      .from("profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Check existing profile and role
+    const [profileResult, roleResult] = await Promise.all([
+      adminClient.from("profiles").select("id, company_id").eq("user_id", user.id).maybeSingle(),
+      adminClient.from("user_roles").select("id, role").eq("user_id", user.id).maybeSingle(),
+    ]);
 
-    if (existingProfile) {
+    const hasCompleteProfile = profileResult.data?.id && profileResult.data?.company_id;
+    const hasRole = !!roleResult.data?.id;
+
+    // If everything is already set up, return early
+    if (hasCompleteProfile && hasRole) {
       return new Response(JSON.stringify({ message: "already_provisioned" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -54,43 +57,58 @@ serve(async (req) => {
 
     const fullName = user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário";
 
-    // Create personal company
-    const { data: company, error: companyError } = await adminClient
-      .from("companies")
-      .insert({
-        name: `Empresa de ${fullName}`,
-        email: user.email,
-        is_active: true,
-      })
-      .select()
-      .single();
+    // Determine company_id: use existing if available, otherwise create new
+    let companyId = profileResult.data?.company_id;
 
-    if (companyError) throw companyError;
+    if (!companyId) {
+      const { data: company, error: companyError } = await adminClient
+        .from("companies")
+        .insert({
+          name: `Empresa de ${fullName}`,
+          email: user.email,
+          is_active: true,
+        })
+        .select()
+        .single();
 
-    // Create profile
-    const { error: profileError } = await adminClient
-      .from("profiles")
-      .insert({
-        user_id: user.id,
-        email: user.email!,
-        full_name: fullName,
-        company_id: company.id,
-      });
+      if (companyError) throw companyError;
+      companyId = company.id;
+    }
 
-    if (profileError) throw profileError;
+    // Create or update profile with company_id
+    if (!profileResult.data?.id) {
+      // No profile at all - create one
+      const { error: profileError } = await adminClient
+        .from("profiles")
+        .insert({
+          user_id: user.id,
+          email: user.email!,
+          full_name: fullName,
+          company_id: companyId,
+        });
+      if (profileError) throw profileError;
+    } else if (!profileResult.data.company_id) {
+      // Profile exists but missing company_id - update it
+      const { error: updateError } = await adminClient
+        .from("profiles")
+        .update({ company_id: companyId })
+        .eq("user_id", user.id);
+      if (updateError) throw updateError;
+    }
 
-    // Assign vendedor role
-    const { error: roleError } = await adminClient
-      .from("user_roles")
-      .insert({
-        user_id: user.id,
-        role: "vendedor",
-        company_id: company.id,
-      });
+    // Assign vendedor role if missing
+    if (!hasRole) {
+      const { error: roleError } = await adminClient
+        .from("user_roles")
+        .insert({
+          user_id: user.id,
+          role: "vendedor",
+          company_id: companyId,
+        });
+      if (roleError) throw roleError;
+    }
 
-    if (roleError) throw roleError;
-
-    return new Response(JSON.stringify({ success: true, company_id: company.id }), {
+    return new Response(JSON.stringify({ success: true, company_id: companyId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
