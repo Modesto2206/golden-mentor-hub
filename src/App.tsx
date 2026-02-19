@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import StorePage from "./pages/Store";
 import CompanySettingsPage from "./pages/CompanySettings";
 import ResetPassword from "./pages/ResetPassword";
+import CreateCompany from "./pages/CreateCompany";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/criar-empresa" element={<CreateCompany />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/bancos" element={<BanksPage />} />
               <Route path="/clientes" element={<ClientsPage />} />
