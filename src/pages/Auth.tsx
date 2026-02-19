@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, ArrowLeft, User, ShieldCheck } from "lucide-react";
+import { Mail, Lock, ArrowLeft, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,15 +18,6 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }).max(100),
 });
 
-const registerSchema = z.object({
-  full_name: z.string().trim().min(2, { message: "Nome deve ter no mínimo 2 caracteres" }).max(200),
-  email: z.string().trim().email({ message: "Email inválido" }).max(255),
-  password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }).max(100),
-  confirm_password: z.string().min(6, { message: "Confirme sua senha" }).max(100),
-}).refine((data) => data.password === data.confirm_password, {
-  message: "As senhas não coincidem",
-  path: ["confirm_password"],
-});
 
 const adminAuthSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }).max(255),
@@ -34,14 +25,14 @@ const adminAuthSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
+
 type AdminAuthFormData = z.infer<typeof adminAuthSchema>;
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "admin_auth" | "register" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "admin_auth" | "forgot">("login");
   const [forgotEmail, setForgotEmail] = useState("");
-  const [adminVerified, setAdminVerified] = useState(false);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, signIn, isLoading: authLoading } = useAuth();
@@ -51,10 +42,6 @@ const Auth = () => {
     defaultValues: { email: "", password: "" },
   });
 
-  const registerForm = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { full_name: "", email: "", password: "", confirm_password: "" },
-  });
 
   const adminAuthForm = useForm<AdminAuthFormData>({
     resolver: zodResolver(adminAuthSchema),
@@ -63,11 +50,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (!authLoading && user && role) {
-      // Don't redirect if admin is in the process of creating a new account
-      if (adminVerified && mode === "register") return;
       navigate("/dashboard", { replace: true });
     }
-  }, [user, role, authLoading, navigate, adminVerified, mode]);
+  }, [user, role, authLoading, navigate]);
 
   const onLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -161,54 +146,9 @@ const Auth = () => {
         return;
       }
 
-      // Admin verified - proceed to register form
-      setAdminVerified(true);
-      setMode("register");
-      toast({ title: "Acesso autorizado", description: "Você pode criar uma nova conta agora." });
-    } catch {
-      toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRegister = async (data: RegisterFormData) => {
-    setIsLoading(true);
-    try {
-      // Sign out admin first so signup works cleanly
-      await supabase.auth.signOut();
-
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: { data: { full_name: data.full_name } },
-      });
-      if (signUpError) {
-        if (signUpError.message.includes("already registered") || signUpError.message.includes("already been registered")) {
-          toast({ variant: "destructive", title: "Email já cadastrado", description: "Este email já possui uma conta. Faça login." });
-          setMode("login");
-          setAdminVerified(false);
-          loginForm.setValue("email", data.email);
-          return;
-        }
-        toast({ variant: "destructive", title: "Erro no cadastro", description: signUpError.message });
-        return;
-      }
-      if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
-        toast({ variant: "destructive", title: "Email já cadastrado", description: "Este email já possui uma conta. Faça login." });
-        setMode("login");
-        setAdminVerified(false);
-        loginForm.setValue("email", data.email);
-        return;
-      }
-      if (signUpData.session) {
-        toast({ title: "Cadastro realizado!", description: "Bem-vindo à plataforma." });
-      } else {
-        toast({ title: "Cadastro realizado!", description: "Verifique seu email para confirmar sua conta antes de fazer login." });
-        setMode("login");
-        setAdminVerified(false);
-        loginForm.setValue("email", data.email);
-      }
+      // Admin verified - redirect to company creation page
+      toast({ title: "Acesso autorizado", description: "Você será redirecionado para criar a empresa." });
+      navigate("/criar-empresa", { replace: true });
     } catch {
       toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
     } finally {
@@ -218,8 +158,6 @@ const Auth = () => {
 
   const handleBackToLogin = () => {
     setMode("login");
-    setAdminVerified(false);
-    // Sign out admin session if it was active
     supabase.auth.signOut();
   };
 
@@ -413,100 +351,7 @@ const Auth = () => {
             </div>
           )}
 
-          {mode === "register" && adminVerified && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <ShieldCheck className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Criar conta</h1>
-                  <p className="text-muted-foreground text-sm">
-                    Preencha os dados do novo usuário
-                  </p>
-                </div>
-              </div>
-              <Form {...registerForm}>
-                <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
-                  <FormField
-                    control={registerForm.control}
-                    name="full_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome Completo</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input {...field} placeholder="Nome completo" className="pl-10 h-12 border-border" disabled={isLoading} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input {...field} type="email" placeholder="email@exemplo.com" className="pl-10 h-12 border-border" disabled={isLoading} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Senha</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input {...field} type="password" placeholder="Mínimo 6 caracteres" className="pl-10 h-12 border-border" disabled={isLoading} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="confirm_password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirmar Senha</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input {...field} type="password" placeholder="Repita a senha" className="pl-10 h-12 border-border" disabled={isLoading} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
-                    {isLoading ? "Cadastrando..." : "Criar Conta"}
-                  </Button>
-                </form>
-              </Form>
-              <Button
-                variant="ghost"
-                className="w-full text-muted-foreground"
-                onClick={handleBackToLogin}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar ao login
-              </Button>
-            </div>
-          )}
+
         </div>
       </div>
 
