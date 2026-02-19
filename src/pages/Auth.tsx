@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ArrowLeft, User, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -18,14 +18,30 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }).max(100),
 });
 
+const registerSchema = z.object({
+  full_name: z.string().trim().min(2, { message: "Nome deve ter no mínimo 2 caracteres" }).max(200),
+  email: z.string().trim().email({ message: "Email inválido" }).max(255),
+  password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }).max(100),
+  confirm_password: z.string().min(6, { message: "Confirme sua senha" }).max(100),
+}).refine((data) => data.password === data.confirm_password, {
+  message: "As senhas não coincidem",
+  path: ["confirm_password"],
+});
+
+const adminAuthSchema = z.object({
+  email: z.string().trim().email({ message: "Email inválido" }).max(255),
+  password: z.string().min(6, { message: "Senha deve ter no mínimo 6 caracteres" }).max(100),
+});
 
 type LoginFormData = z.infer<typeof loginSchema>;
-
+type RegisterFormData = z.infer<typeof registerSchema>;
+type AdminAuthFormData = z.infer<typeof adminAuthSchema>;
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
+  const [mode, setMode] = useState<"login" | "admin_auth" | "register" | "forgot">("login");
   const [forgotEmail, setForgotEmail] = useState("");
+  const [adminVerified, setAdminVerified] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, signIn, isLoading: authLoading } = useAuth();
@@ -35,12 +51,23 @@ const Auth = () => {
     defaultValues: { email: "", password: "" },
   });
 
+  const registerForm = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { full_name: "", email: "", password: "", confirm_password: "" },
+  });
+
+  const adminAuthForm = useForm<AdminAuthFormData>({
+    resolver: zodResolver(adminAuthSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   useEffect(() => {
     if (!authLoading && user && role) {
+      // Don't redirect if admin is in the process of creating a new account
+      if (adminVerified && mode === "register") return;
       navigate("/dashboard", { replace: true });
     }
-  }, [user, role, authLoading, navigate]);
+  }, [user, role, authLoading, navigate, adminVerified, mode]);
 
   const onLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -100,6 +127,101 @@ const Auth = () => {
     }
   };
 
+  const onAdminAuth = async (data: AdminAuthFormData) => {
+    setIsLoading(true);
+    try {
+      // Sign in as admin to verify
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (error) {
+        toast({ variant: "destructive", title: "Erro na autenticação", description: "Credenciais inválidas." });
+        return;
+      }
+
+      // Check if user has super admin role
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      if (!adminUser) {
+        toast({ variant: "destructive", title: "Erro", description: "Não foi possível verificar o usuário." });
+        await supabase.auth.signOut();
+        return;
+      }
+
+      const { data: roleData } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", adminUser.id)
+        .maybeSingle();
+
+      const userRole = roleData?.role;
+      if (userRole !== "raiz" && userRole !== "admin_global") {
+        toast({ variant: "destructive", title: "Acesso negado", description: "Apenas Super Administradores podem criar contas." });
+        await supabase.auth.signOut();
+        return;
+      }
+
+      // Admin verified - proceed to register form
+      setAdminVerified(true);
+      setMode("register");
+      toast({ title: "Acesso autorizado", description: "Você pode criar uma nova conta agora." });
+    } catch {
+      toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRegister = async (data: RegisterFormData) => {
+    setIsLoading(true);
+    try {
+      // Sign out admin first so signup works cleanly
+      await supabase.auth.signOut();
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: { data: { full_name: data.full_name } },
+      });
+      if (signUpError) {
+        if (signUpError.message.includes("already registered") || signUpError.message.includes("already been registered")) {
+          toast({ variant: "destructive", title: "Email já cadastrado", description: "Este email já possui uma conta. Faça login." });
+          setMode("login");
+          setAdminVerified(false);
+          loginForm.setValue("email", data.email);
+          return;
+        }
+        toast({ variant: "destructive", title: "Erro no cadastro", description: signUpError.message });
+        return;
+      }
+      if (signUpData.user && signUpData.user.identities && signUpData.user.identities.length === 0) {
+        toast({ variant: "destructive", title: "Email já cadastrado", description: "Este email já possui uma conta. Faça login." });
+        setMode("login");
+        setAdminVerified(false);
+        loginForm.setValue("email", data.email);
+        return;
+      }
+      if (signUpData.session) {
+        toast({ title: "Cadastro realizado!", description: "Bem-vindo à plataforma." });
+      } else {
+        toast({ title: "Cadastro realizado!", description: "Verifique seu email para confirmar sua conta antes de fazer login." });
+        setMode("login");
+        setAdminVerified(false);
+        loginForm.setValue("email", data.email);
+      }
+    } catch {
+      toast({ variant: "destructive", title: "Erro", description: "Ocorreu um erro inesperado." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setMode("login");
+    setAdminVerified(false);
+    // Sign out admin session if it was active
+    supabase.auth.signOut();
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
@@ -209,9 +331,182 @@ const Auth = () => {
                 </form>
               </Form>
 
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full h-12 text-base font-medium border-border"
+                onClick={() => setMode("admin_auth")}
+              >
+                Criar uma conta
+              </Button>
             </div>
           )}
 
+          {mode === "admin_auth" && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Autenticação Administrativa</h1>
+                  <p className="text-muted-foreground text-sm">
+                    Faça login com sua conta de Super Admin para criar uma nova conta
+                  </p>
+                </div>
+              </div>
+              <Form {...adminAuthForm}>
+                <form onSubmit={adminAuthForm.handleSubmit(onAdminAuth)} className="space-y-4">
+                  <FormField
+                    control={adminAuthForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email do Super Admin</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="email" placeholder="Email do administrador" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={adminAuthForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha do Super Admin</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="password" placeholder="••••••••" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                    {isLoading ? "Verificando..." : "Verificar e Continuar"}
+                  </Button>
+                </form>
+              </Form>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={handleBackToLogin}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar ao login
+              </Button>
+            </div>
+          )}
+
+          {mode === "register" && adminVerified && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ShieldCheck className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Criar conta</h1>
+                  <p className="text-muted-foreground text-sm">
+                    Preencha os dados do novo usuário
+                  </p>
+                </div>
+              </div>
+              <Form {...registerForm}>
+                <form onSubmit={registerForm.handleSubmit(onRegister)} className="space-y-4">
+                  <FormField
+                    control={registerForm.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} placeholder="Nome completo" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="email" placeholder="email@exemplo.com" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="password" placeholder="Mínimo 6 caracteres" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="confirm_password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Senha</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input {...field} type="password" placeholder="Repita a senha" className="pl-10 h-12 border-border" disabled={isLoading} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full h-12 text-base font-semibold" disabled={isLoading}>
+                    {isLoading ? "Cadastrando..." : "Criar Conta"}
+                  </Button>
+                </form>
+              </Form>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={handleBackToLogin}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar ao login
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
