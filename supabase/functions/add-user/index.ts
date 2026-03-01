@@ -69,6 +69,59 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get caller's company_id
+    const { data: callerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("company_id")
+      .eq("user_id", callingUser.id)
+      .maybeSingle();
+
+    const callerCompanyId = callerProfile?.company_id;
+
+    if (!callerCompanyId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Empresa não encontrada para o administrador" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check plan user limit
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("max_users, status")
+      .eq("id", callerCompanyId)
+      .single();
+
+    if (company?.status === "suspended") {
+      return new Response(
+        JSON.stringify({ success: false, error: "Empresa suspensa. Não é possível adicionar colaboradores." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (company?.status === "canceled") {
+      return new Response(
+        JSON.stringify({ success: false, error: "Empresa cancelada. Não é possível adicionar colaboradores." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { count: currentUserCount } = await supabaseAdmin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", callerCompanyId)
+      .eq("is_active", true);
+
+    if (company?.max_users && (currentUserCount ?? 0) >= company.max_users) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "O limite de usuários do seu plano foi atingido. Faça upgrade do plano para adicionar mais colaboradores." 
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const userInputSchema = z.object({
       email: z.string().trim().email("Email inválido").max(255),
       password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100),
@@ -90,8 +143,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, role, full_name, phone, company_id } = validatedInput;
-    console.log(`Creating user: ${email} with role: ${role}`);
+    const { email, password, role, full_name, phone } = validatedInput;
+    // Always use the caller's company_id - never trust frontend
+    const resolvedCompanyId = callerCompanyId;
+    console.log(`Creating user: ${email} with role: ${role} for company: ${resolvedCompanyId}`);
 
     // Create new user
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -119,7 +174,7 @@ Deno.serve(async (req) => {
       const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
         user_id: newUser.user.id,
         role,
-        company_id: company_id || null,
+        company_id: resolvedCompanyId,
       });
 
       if (roleError) {
@@ -141,12 +196,11 @@ Deno.serve(async (req) => {
           email,
           full_name,
           phone: phone || null,
-          company_id: company_id || null,
+          company_id: resolvedCompanyId,
         });
       } else {
         // Update profile with company_id and phone if provided
-        const updates: Record<string, any> = {};
-        if (company_id) updates.company_id = company_id;
+        const updates: Record<string, any> = { company_id: resolvedCompanyId };
         if (phone) updates.phone = phone;
         if (Object.keys(updates).length > 0) {
           await supabaseAdmin.from("profiles").update(updates).eq("user_id", newUser.user.id);

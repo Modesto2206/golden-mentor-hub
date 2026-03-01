@@ -54,6 +54,11 @@ const CreateCompany = () => {
   const onSubmit = async (data: CreateCompanyFormData) => {
     setIsLoading(true);
     try {
+      const planMaxUsers: Record<string, number> = {
+        basico: 2,
+        profissional: 5,
+        enterprise: 10,
+      };
       const { data: result, error } = await supabase.functions.invoke("create-company", {
         body: {
           company_name: data.company_name,
@@ -62,6 +67,7 @@ const CreateCompany = () => {
           company_phone: data.company_phone || null,
           responsavel: data.responsavel || null,
           plano: data.plano,
+          max_users: planMaxUsers[data.plano] || 2,
           admin_name: data.admin_name,
           admin_email: data.admin_email,
           admin_password: data.admin_password,
@@ -223,9 +229,9 @@ const CreateCompany = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="basico">Básico</SelectItem>
-                            <SelectItem value="profissional">Profissional</SelectItem>
-                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            <SelectItem value="basico">Básico (2 usuários)</SelectItem>
+                            <SelectItem value="profissional">Profissional (5 usuários)</SelectItem>
+                            <SelectItem value="enterprise">Enterprise (10 usuários)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

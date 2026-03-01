@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -20,6 +21,9 @@ const ClientsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [filterConvenio, setFilterConvenio] = useState<string>("all");
+  const [filterModalidade, setFilterModalidade] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
@@ -52,6 +56,8 @@ const ClientsPage = () => {
         address_city: data.address_city || null,
         address_state: data.address_state || null,
         internal_notes: data.internal_notes || null,
+        convenio: data.convenio || null,
+        modalidade: data.modalidade || null,
       });
       if (error) throw error;
     },
@@ -80,6 +86,8 @@ const ClientsPage = () => {
           address_city: rest.address_city || null,
           address_state: rest.address_state || null,
           internal_notes: rest.internal_notes || null,
+          convenio: rest.convenio || null,
+          modalidade: rest.modalidade || null,
         })
         .eq("id", id);
       if (error) throw error;
@@ -128,6 +136,8 @@ const ClientsPage = () => {
     address_city: client.address_city || "",
     address_state: client.address_state || "",
     internal_notes: client.internal_notes || "",
+    convenio: client.convenio || "",
+    modalidade: client.modalidade || "",
   });
 
   // Search logic
@@ -135,9 +145,13 @@ const ClientsPage = () => {
   const isSearchingCPF = searchDigits.length > 0;
 
   const filtered = clients.filter((c: any) => {
-    if (!search) return true;
-    if (isSearchingCPF) return c.cpf === searchDigits;
-    return c.full_name.toLowerCase().includes(search.toLowerCase());
+    if (isSearchingCPF && c.cpf !== searchDigits) return false;
+    if (!isSearchingCPF && search && !c.full_name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterConvenio !== "all" && c.convenio !== filterConvenio) return false;
+    if (filterModalidade !== "all" && c.modalidade !== filterModalidade) return false;
+    if (filterStatus === "active" && !c.is_active) return false;
+    if (filterStatus === "inactive" && c.is_active) return false;
+    return true;
   });
 
   const maskCPF = (cpf: string) => {
@@ -164,14 +178,53 @@ const ClientsPage = () => {
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF exato..." className="pl-10" />
+        {/* Search & Filters */}
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF exato..." className="pl-10" />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Select value={filterConvenio} onValueChange={setFilterConvenio}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Convênio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Convênios</SelectItem>
+                <SelectItem value="INSS">INSS</SelectItem>
+                <SelectItem value="SIAPE">SIAPE</SelectItem>
+                <SelectItem value="Forças Armadas">Forças Armadas</SelectItem>
+                <SelectItem value="CLT">CLT</SelectItem>
+                <SelectItem value="FGTS">FGTS</SelectItem>
+                <SelectItem value="Outros">Outros</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterModalidade} onValueChange={setFilterModalidade}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Modalidade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas Modalidades</SelectItem>
+                <SelectItem value="margem_livre">Margem Livre</SelectItem>
+                <SelectItem value="portabilidade">Portabilidade</SelectItem>
+                <SelectItem value="port_refinanciamento">Port. + Refin.</SelectItem>
+                <SelectItem value="cartao_consignado">Cartão Consignado</SelectItem>
+                <SelectItem value="fgts_antecipacao">FGTS Antecipação</SelectItem>
+                <SelectItem value="credito_trabalhador">Crédito Trabalhador</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="active">Ativos</SelectItem>
+                <SelectItem value="inactive">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        {isSearchingCPF && filtered.length === 0 && search.length > 0 && (
-          <p className="text-sm text-muted-foreground">Cliente não encontrado</p>
-        )}
 
         {/* Clients Table */}
         <Card className="border-border/50">

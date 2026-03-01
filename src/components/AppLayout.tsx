@@ -3,13 +3,15 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { useCompanyStatus } from "@/hooks/useCompanyStatus";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
   LogOut, Shield, User, ChevronLeft, ChevronRight,
-  Landmark, ShoppingBag, Settings
+  Landmark, ShoppingBag, Settings, BarChart3, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddUserModal from "@/components/dashboard/AddUserModal";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -30,7 +32,9 @@ const navItems: NavItem[] = [
   { label: "Nova Proposta", icon: <PlusCircle className="w-5 h-5" />, href: "/propostas/nova" },
   { label: "Clientes", icon: <Users className="w-5 h-5" />, href: "/clientes" },
   { label: "Bancos", icon: <Landmark className="w-5 h-5" />, href: "/bancos" },
+  { label: "Relatório", icon: <BarChart3 className="w-5 h-5" />, href: "/relatorio", roles: ["administrador", "raiz", "admin_global", "admin_empresa", "gerente", "financeiro"] },
   { label: "Loja", icon: <ShoppingBag className="w-5 h-5" />, href: "/loja" },
+  { label: "Super Admin", icon: <Shield className="w-5 h-5" />, href: "/super-admin", roles: ["raiz", "admin_global"] },
   { label: "Configurações", icon: <Settings className="w-5 h-5" />, href: "/configuracoes", roles: ["administrador", "raiz", "admin_global", "admin_empresa"] },
 ];
 
@@ -57,6 +61,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { user, role, isLoading, signOut, isAdmin } = useAuth();
   const { resolvedTheme } = useTheme();
   const { settings: companySettings } = useCompanySettings();
+  const { isSuspended, isCanceled, isReadOnly } = useCompanyStatus();
   const [collapsed, setCollapsed] = useState(false);
 
   const hasCustomLogo = !!companySettings?.logo_url;
@@ -171,6 +176,16 @@ const AppLayout = ({ children }: AppLayoutProps) => {
 
         {/* Content */}
         <main className="flex-1 p-4 md:p-6 overflow-auto">
+          {isReadOnly && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="w-4 h-4" />
+              <AlertDescription>
+                {isSuspended
+                  ? "Sua empresa está suspensa. O acesso é somente leitura. Entre em contato com o administrador."
+                  : "Sua empresa foi cancelada. O acesso é somente leitura."}
+              </AlertDescription>
+            </Alert>
+          )}
           {children}
         </main>
       </div>
