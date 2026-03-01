@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,23 +69,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, role, full_name, phone, company_id } = await req.json();
+    const userInputSchema = z.object({
+      email: z.string().trim().email("Email inválido").max(255),
+      password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100),
+      role: z.enum(["vendedor", "administrador"], { errorMap: () => ({ message: "Função inválida" }) }),
+      full_name: z.string().trim().min(2, "Nome deve ter no mínimo 2 caracteres").max(200),
+      phone: z.string().trim().max(20).optional().nullable(),
+      company_id: z.string().uuid("ID da empresa inválido").optional().nullable(),
+    });
+
+    let validatedInput;
+    try {
+      validatedInput = userInputSchema.parse(await req.json());
+    } catch (e) {
+      const zodError = e as z.ZodError;
+      const message = zodError.errors?.map((err) => err.message).join(", ") || "Dados inválidos";
+      return new Response(
+        JSON.stringify({ success: false, error: message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { email, password, role, full_name, phone, company_id } = validatedInput;
     console.log(`Creating user: ${email} with role: ${role}`);
-
-    // Validate inputs
-    if (!email || !password || !role || !full_name) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Todos os campos são obrigatórios" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!["vendedor", "administrador"].includes(role)) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Função inválida" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
 
     // Create new user
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({

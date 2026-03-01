@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,7 +73,27 @@ Deno.serve(async (req) => {
     console.log("Permissão confirmada. Role:", callerRole.role);
 
     // 4. Parse and validate input
-    const body = await req.json();
+    const companyInputSchema = z.object({
+      company_name: z.string().trim().min(2, "Nome da empresa obrigatório").max(200),
+      cnpj: z.string().trim().min(11, "CNPJ inválido").max(20),
+      company_email: z.string().trim().email("Email da empresa inválido").max(255).optional().nullable(),
+      company_phone: z.string().trim().max(20).optional().nullable(),
+      responsavel: z.string().trim().max(200).optional().nullable(),
+      plano: z.enum(["basico", "profissional", "enterprise"]).optional().default("basico"),
+      admin_email: z.string().trim().email("Email do admin inválido").max(255),
+      admin_password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100),
+      admin_name: z.string().trim().min(2, "Nome do admin obrigatório").max(200),
+    });
+
+    let validatedInput;
+    try {
+      validatedInput = companyInputSchema.parse(await req.json());
+    } catch (e) {
+      const zodError = e as z.ZodError;
+      const message = zodError.errors?.map((err) => err.message).join(", ") || "Dados inválidos";
+      return jsonResponse({ success: false, error: message }, 400);
+    }
+
     const {
       company_name,
       cnpj,
@@ -83,14 +104,7 @@ Deno.serve(async (req) => {
       admin_email,
       admin_password,
       admin_name,
-    } = body;
-
-    if (!company_name || !cnpj || !admin_email || !admin_password || !admin_name) {
-      return jsonResponse(
-        { success: false, error: "Campos obrigatórios: nome da empresa, CNPJ, email/senha/nome do admin" },
-        400
-      );
-    }
+    } = validatedInput;
 
     // 5. Check CNPJ uniqueness
     const cleanCnpj = cnpj.replace(/\D/g, "");
