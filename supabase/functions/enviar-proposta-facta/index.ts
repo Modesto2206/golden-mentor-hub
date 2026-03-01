@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,12 +53,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { proposalId } = await req.json();
-    if (!proposalId) {
-      return new Response(JSON.stringify({ success: false, error: "proposalId obrigatório" }), {
+    const proposalInputSchema = z.object({
+      proposalId: z.string().uuid("ID da proposta inválido"),
+    });
+
+    let validatedInput;
+    try {
+      validatedInput = proposalInputSchema.parse(await req.json());
+    } catch (e) {
+      const zodError = e as z.ZodError;
+      const message = zodError.errors?.map((err) => err.message).join(", ") || "Dados inválidos";
+      return new Response(JSON.stringify({ success: false, error: message }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const { proposalId } = validatedInput;
 
     // Fetch proposal with client and bank
     const { data: proposal, error: propError } = await supabaseAdmin

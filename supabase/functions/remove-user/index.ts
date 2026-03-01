@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,15 +68,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { user_id } = await req.json();
-    console.log(`Attempting to remove user: ${user_id}`);
+    const removeUserSchema = z.object({
+      user_id: z.string().uuid("ID do usuário inválido"),
+    });
 
-    if (!user_id) {
+    let validatedInput;
+    try {
+      validatedInput = removeUserSchema.parse(await req.json());
+    } catch (e) {
+      const zodError = e as z.ZodError;
+      const message = zodError.errors?.map((err) => err.message).join(", ") || "Dados inválidos";
       return new Response(
-        JSON.stringify({ success: false, error: "ID do usuário é obrigatório" }),
+        JSON.stringify({ success: false, error: message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const { user_id } = validatedInput;
+    console.log(`Attempting to remove user: ${user_id}`);
 
     // Prevent removing self
     if (user_id === callingUser.id) {
