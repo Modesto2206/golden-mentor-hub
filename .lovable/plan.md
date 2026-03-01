@@ -28,6 +28,8 @@ Plataforma SaaS multi-tenant para gestão de crédito consignado no modelo CORBA
 
 ### ✅ Fase 3 — Clientes
 - Tabela `clients` com CPF único por empresa
+- Campos `convenio` e `modalidade` no cadastro de clientes
+- Filtros combináveis: convênio, modalidade, status
 - Tabelas: `benefits`, `consent_requests`
 - Cadastro com validação de CPF (algoritmo completo)
 - Busca por nome/CPF
@@ -36,31 +38,43 @@ Plataforma SaaS multi-tenant para gestão de crédito consignado no modelo CORBA
 ### ✅ Fase 4 — Propostas (Core)
 - Tabelas: `proposals`, `proposal_status_history`, `portability_contracts`, `simulations`
 - Enums: `proposal_internal_status` (11 status), `proposal_bank_status` (8 status)
-- Wizard 6 etapas: Cliente → Banco/Produto → Portabilidade → Simulação → Dados Bancários → Revisão
+- Wizard 6 etapas
 - Status machine com histórico de transições
 - Página de gestão com filtros, dashboard cards, tabela
 
 ### ✅ Fase 5 — Comissões + Metas
 - Tabelas: `commission_rules`, `commission_entries`, `goals`
-- Schema pronto para cálculo automático
 
 ### ✅ Fase 6 — Tarefas + Alertas
 - Tabelas: `tasks`, `alerts`
-- Schema pronto para automações
 
 ### ✅ Fase 7 — Integrações
 - Tabela: `integration_logs`
-- Schema pronto para webhooks n8n
+
+### ✅ Fase 8 — Enterprise SaaS Architecture
+- **Planos com limites**: basico (2), profissional (5), enterprise (10) usuários
+- **max_users** e **status** na tabela `companies`
+- **Validação de limite** no Edge Function `add-user` (server-side)
+- **company_id sempre do backend** — nunca confia no frontend
+- **Suspensão de empresa**: status suspended/canceled bloqueia write operations
+- **Banner de suspensão** no AppLayout
+- **Funções DB**: `get_company_user_count()`, `can_add_user()`, `is_company_active()`
+- **Índices compostos** (company_id, created_at) em todas as tabelas core
+- **Relatório Financeiro**: receita, comissões, ticket médio, novos clientes, agrupamentos por vendedor/modalidade/convênio
+- **Dashboard Super Admin**: total empresas, ativas/suspensas, MRR, receita por plano, crescimento mensal, tabela de empresas
 
 ### ✅ Navegação Reestruturada
 - `AppLayout` com sidebar + header unificados
-- Rotas: /dashboard, /bancos, /clientes, /propostas, /propostas/nova
+- Rotas: /dashboard, /bancos, /clientes, /propostas, /propostas/nova, /relatorio, /super-admin
 - Navegação role-based
 
 ---
 
 ## Próximos Passos (Backlog)
-- [ ] Página de gestão de empresas (super admin)
+- [ ] CRUD de empresas no Super Admin (editar plano, suspender, cancelar)
+- [ ] Subdomain per company (company.cred.com)
+- [ ] White-label support
+- [ ] Feature flags per plan
 - [ ] CRUD completo de produtos por banco
 - [ ] Detalhes/edição de proposta individual
 - [ ] Status machine com transições validadas (edge function)
@@ -72,3 +86,4 @@ Plataforma SaaS multi-tenant para gestão de crédito consignado no modelo CORBA
 - [ ] Exportação CSV/Excel de propostas
 - [ ] Anonimização de dados (LGPD)
 - [ ] Audit log viewer para auditores
+- [ ] Public API

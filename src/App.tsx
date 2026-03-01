@@ -17,6 +17,8 @@ import StorePage from "./pages/Store";
 import CompanySettingsPage from "./pages/CompanySettings";
 import ResetPassword from "./pages/ResetPassword";
 import CreateCompany from "./pages/CreateCompany";
+import FinancialReport from "./pages/FinancialReport";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
               <Route path="/propostas" element={<ProposalsPage />} />
               <Route path="/propostas/nova" element={<NewProposal />} />
               <Route path="/loja" element={<StorePage />} />
+              <Route path="/relatorio" element={<FinancialReport />} />
+              <Route path="/super-admin" element={<SuperAdminDashboard />} />
               <Route path="/configuracoes" element={<CompanySettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -49,6 +49,8 @@ const clientSchema = z.object({
   address_city: z.string().max(100).optional(),
   address_state: z.string().max(2).optional(),
   internal_notes: z.string().max(1000).optional(),
+  convenio: z.string().optional(),
+  modalidade: z.string().optional(),
 });
 
 export type ClientFormData = z.infer<typeof clientSchema>;
@@ -84,6 +86,8 @@ const ClientFormDialog = ({
       gender: "",
       address_city: "",
       address_state: "",
+      convenio: "",
+      modalidade: "",
       ...defaultValues,
     },
   });
@@ -100,6 +104,8 @@ const ClientFormDialog = ({
         gender: "",
         address_city: "",
         address_state: "",
+        convenio: "",
+        modalidade: "",
         ...defaultValues,
       });
     } else if (open && !defaultValues) {
@@ -113,6 +119,8 @@ const ClientFormDialog = ({
         gender: "",
         address_city: "",
         address_state: "",
+        convenio: "",
+        modalidade: "",
       });
     }
   }, [open, defaultValues, form]);
@@ -193,6 +201,40 @@ const ClientFormDialog = ({
                 <FormItem>
                   <FormLabel>UF</FormLabel>
                   <FormControl><Input {...field} placeholder="SP" maxLength={2} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="convenio" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Convênio</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="INSS">INSS</SelectItem>
+                      <SelectItem value="SIAPE">SIAPE</SelectItem>
+                      <SelectItem value="Forças Armadas">Forças Armadas</SelectItem>
+                      <SelectItem value="CLT">CLT</SelectItem>
+                      <SelectItem value="FGTS">FGTS</SelectItem>
+                      <SelectItem value="Outros">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="modalidade" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Modalidade</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="margem_livre">Margem Livre</SelectItem>
+                      <SelectItem value="portabilidade">Portabilidade</SelectItem>
+                      <SelectItem value="port_refinanciamento">Port. + Refinanciamento</SelectItem>
+                      <SelectItem value="cartao_consignado">Cartão Consignado</SelectItem>
+                      <SelectItem value="fgts_antecipacao">FGTS Antecipação</SelectItem>
+                      <SelectItem value="credito_trabalhador">Crédito Trabalhador</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />

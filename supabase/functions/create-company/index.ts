@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       company_phone: z.string().trim().max(20).optional().nullable(),
       responsavel: z.string().trim().max(200).optional().nullable(),
       plano: z.enum(["basico", "profissional", "enterprise"]).optional().default("basico"),
+      max_users: z.number().int().min(1).max(100).optional().default(2),
       admin_email: z.string().trim().email("Email do admin inválido").max(255),
       admin_password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100),
       admin_name: z.string().trim().min(2, "Nome do admin obrigatório").max(200),
@@ -101,6 +102,7 @@ Deno.serve(async (req) => {
       company_phone,
       responsavel,
       plano,
+      max_users,
       admin_email,
       admin_password,
       admin_name,
@@ -133,6 +135,8 @@ Deno.serve(async (req) => {
         phone: company_phone?.replace(/\D/g, "") || null,
         responsavel: responsavel || null,
         plano: plano || "basico",
+        max_users: max_users || 2,
+        status: "active",
       })
       .select()
       .single();

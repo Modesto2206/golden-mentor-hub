@@ -303,6 +303,7 @@ export type Database = {
           address_zip: string | null
           birth_date: string | null
           company_id: string
+          convenio: string | null
           cpf: string
           created_at: string
           created_by: string | null
@@ -312,6 +313,7 @@ export type Database = {
           id: string
           internal_notes: string | null
           is_active: boolean
+          modalidade: string | null
           nationality: string | null
           phone: string | null
           updated_at: string
@@ -326,6 +328,7 @@ export type Database = {
           address_zip?: string | null
           birth_date?: string | null
           company_id: string
+          convenio?: string | null
           cpf: string
           created_at?: string
           created_by?: string | null
@@ -335,6 +338,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_active?: boolean
+          modalidade?: string | null
           nationality?: string | null
           phone?: string | null
           updated_at?: string
@@ -349,6 +353,7 @@ export type Database = {
           address_zip?: string | null
           birth_date?: string | null
           company_id?: string
+          convenio?: string | null
           cpf?: string
           created_at?: string
           created_by?: string | null
@@ -358,6 +363,7 @@ export type Database = {
           id?: string
           internal_notes?: string | null
           is_active?: boolean
+          modalidade?: string | null
           nationality?: string | null
           phone?: string | null
           updated_at?: string
@@ -500,10 +506,12 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean
+          max_users: number
           name: string
           phone: string | null
           plano: string | null
           responsavel: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -512,10 +520,12 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean
+          max_users?: number
           name: string
           phone?: string | null
           plano?: string | null
           responsavel?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -524,10 +534,12 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean
+          max_users?: number
           name?: string
           phone?: string | null
           plano?: string | null
           responsavel?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -1412,6 +1424,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_add_user: { Args: { _company_id: string }; Returns: boolean }
+      get_company_user_count: { Args: { _company_id: string }; Returns: number }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_permission: {
         Args: {
@@ -1429,6 +1443,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_company_active: { Args: { _company_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_vendedor: { Args: never; Returns: boolean }
     }
