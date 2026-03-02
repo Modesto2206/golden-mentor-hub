@@ -95,19 +95,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if target user is an admin - admins cannot be removed
+    // Check if target user is an admin - only super admins (raiz, admin_global) can remove admins
     const { data: targetRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", user_id)
-      .eq("role", "administrador")
+      .in("role", ["administrador", "raiz", "admin_global", "admin_empresa"])
       .maybeSingle();
 
     if (targetRole) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Não é permitido remover um administrador" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Allow super admins to remove regular admins, but never remove raiz/admin_global
+      const targetIsSuper = targetRole.role === "raiz" || targetRole.role === "admin_global";
+      const callerIsSuper = callerRole.role === "raiz" || callerRole.role === "admin_global";
+
+      if (targetIsSuper) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Não é permitido remover um super administrador" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (!callerIsSuper) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Apenas super administradores podem remover administradores" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Delete user role
