@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,38 +6,30 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Users, DollarSign, TrendingUp, Shield, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Building2, Users, DollarSign, TrendingUp, Shield, BarChart3, Settings2 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import CompanyManagementDialog from "@/components/superadmin/CompanyManagementDialog";
 
-const planPrices: Record<string, number> = {
-  basico: 97,
-  profissional: 197,
-  enterprise: 497,
-};
-
-const planLabels: Record<string, string> = {
-  basico: "Básico",
-  profissional: "Profissional",
-  enterprise: "Enterprise",
-};
-
-const statusLabels: Record<string, string> = {
-  active: "Ativa",
-  suspended: "Suspensa",
-  canceled: "Cancelada",
+const planPrices: Record<string, number> = { basico: 97, profissional: 197, enterprise: 497 };
+const planLabels: Record<string, string> = { basico: "Básico", profissional: "Profissional", enterprise: "Enterprise" };
+const statusLabels: Record<string, string> = { active: "Ativa", suspended: "Suspensa", canceled: "Cancelada" };
+const statusColors: Record<string, string> = {
+  active: "bg-green-500/10 text-green-500 border-green-500/30",
+  suspended: "bg-yellow-500/10 text-yellow-500 border-yellow-500/30",
+  canceled: "bg-red-500/10 text-red-500 border-red-500/30",
 };
 
 const SuperAdminDashboard = () => {
   const { isSuperAdmin, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [selectedCompany, setSelectedCompany] = useState<any>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: companies = [] } = useQuery({
     queryKey: ["super-admin-companies"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("companies")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("companies").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -47,9 +39,7 @@ const SuperAdminDashboard = () => {
   const { data: allProfiles = [] } = useQuery({
     queryKey: ["super-admin-profiles"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("company_id, is_active");
+      const { data, error } = await supabase.from("profiles").select("company_id, is_active");
       if (error) throw error;
       return data ?? [];
     },
@@ -58,28 +48,22 @@ const SuperAdminDashboard = () => {
 
   const stats = useMemo(() => {
     const total = companies.length;
-    const active = companies.filter((c) => (c as any).status === "active" || !(c as any).status).length;
-    const suspended = companies.filter((c) => (c as any).status === "suspended").length;
-    const canceled = companies.filter((c) => (c as any).status === "canceled").length;
-
-    // MRR
+    const active = companies.filter((c) => c.status === "active" || !c.status).length;
+    const suspended = companies.filter((c) => c.status === "suspended").length;
+    const canceled = companies.filter((c) => c.status === "canceled").length;
     const mrr = companies
-      .filter((c) => (c as any).status === "active" || !(c as any).status)
+      .filter((c) => c.status === "active" || !c.status)
       .reduce((sum, c) => sum + (planPrices[c.plano || "basico"] || 0), 0);
 
-    // Revenue by plan
     const byPlan = new Map<string, { count: number; revenue: number }>();
     companies.forEach((c) => {
       const plan = c.plano || "basico";
       const existing = byPlan.get(plan) || { count: 0, revenue: 0 };
       existing.count++;
-      if ((c as any).status === "active" || !(c as any).status) {
-        existing.revenue += planPrices[plan] || 0;
-      }
+      if (c.status === "active" || !c.status) existing.revenue += planPrices[plan] || 0;
       byPlan.set(plan, existing);
     });
 
-    // Users per company
     const usersPerCompany = new Map<string, number>();
     allProfiles.forEach((p) => {
       if (p.company_id && p.is_active) {
@@ -87,7 +71,6 @@ const SuperAdminDashboard = () => {
       }
     });
 
-    // Monthly growth (companies created this month)
     const thisMonth = new Date();
     thisMonth.setDate(1);
     const newThisMonth = companies.filter((c) => new Date(c.created_at) >= thisMonth).length;
@@ -189,13 +172,14 @@ const SuperAdminDashboard = () => {
                   <TableHead>Usuários</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Criada em</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {companies.map((company) => {
                   const userCount = stats.usersPerCompany.get(company.id) || 0;
-                  const maxUsers = (company as any).max_users || 2;
-                  const status = (company as any).status || "active";
+                  const maxUsers = company.max_users || 2;
+                  const status = company.status || "active";
                   return (
                     <TableRow key={company.id}>
                       <TableCell className="font-medium">{company.name}</TableCell>
@@ -211,15 +195,24 @@ const SuperAdminDashboard = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={status === "active" ? "default" : "secondary"}
-                          className="text-xs"
-                        >
+                        <Badge variant="outline" className={`text-xs ${statusColors[status] || ""}`}>
                           {statusLabels[status] || status}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">
                         {new Date(company.created_at).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedCompany(company);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          <Settings2 className="w-4 h-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -229,6 +222,12 @@ const SuperAdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <CompanyManagementDialog
+        company={selectedCompany}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </AppLayout>
   );
 };

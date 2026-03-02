@@ -503,6 +503,7 @@ export type Database = {
         Row: {
           cnpj: string | null
           created_at: string
+          deleted_at: string | null
           email: string | null
           id: string
           is_active: boolean
@@ -512,11 +513,14 @@ export type Database = {
           plano: string | null
           responsavel: string | null
           status: string
+          suspended_at: string | null
+          suspended_by: string | null
           updated_at: string
         }
         Insert: {
           cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -526,11 +530,14 @@ export type Database = {
           plano?: string | null
           responsavel?: string | null
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
           updated_at?: string
         }
         Update: {
           cnpj?: string | null
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean
@@ -540,6 +547,8 @@ export type Database = {
           plano?: string | null
           responsavel?: string | null
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1195,6 +1204,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "sales_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seller_commissions: {
+        Row: {
+          applied_rate: number
+          celebrated_ranges: Json
+          commission_value: number
+          company_id: string
+          created_at: string
+          id: string
+          month_reference: string
+          seller_id: string
+          status: string
+          total_volume: number
+          updated_at: string
+        }
+        Insert: {
+          applied_rate?: number
+          celebrated_ranges?: Json
+          commission_value?: number
+          company_id: string
+          created_at?: string
+          id?: string
+          month_reference: string
+          seller_id: string
+          status?: string
+          total_volume?: number
+          updated_at?: string
+        }
+        Update: {
+          applied_rate?: number
+          celebrated_ranges?: Json
+          commission_value?: number
+          company_id?: string
+          created_at?: string
+          id?: string
+          month_reference?: string
+          seller_id?: string
+          status?: string
+          total_volume?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_commissions_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"

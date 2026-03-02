@@ -6,7 +6,7 @@ import {
   arrayMove, SortableContext, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, List, Users } from "lucide-react";
+import { PlusCircle, List, Users, Award } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSalesWithProfiles } from "@/hooks/useSalesWithProfiles";
 import { useMonthlyGoal } from "@/hooks/useMonthlyGoal";
@@ -18,6 +18,7 @@ import SalesCharts from "@/components/dashboard/SalesCharts";
 import SalesRanking from "@/components/dashboard/SalesRanking";
 import SalesProjection from "@/components/dashboard/SalesProjection";
 import TeamManagement from "@/components/dashboard/TeamManagement";
+import SellerCommissionPanel from "@/components/dashboard/SellerCommissionPanel";
 import SortableWidget from "@/components/dashboard/SortableWidget";
 import EditModeToolbar from "@/components/dashboard/EditModeToolbar";
 import AppLayout from "@/components/AppLayout";
@@ -58,6 +59,7 @@ const Dashboard = () => {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="new-sale"><PlusCircle className="w-4 h-4 mr-1" />Nova Venda</TabsTrigger>
           <TabsTrigger value="sales"><List className="w-4 h-4 mr-1" />Vendas</TabsTrigger>
+          <TabsTrigger value="commission"><Award className="w-4 h-4 mr-1" />Comissão</TabsTrigger>
           {isAdmin && <TabsTrigger value="team"><Users className="w-4 h-4 mr-1" />Equipe</TabsTrigger>}
         </TabsList>
 
@@ -104,6 +106,10 @@ const Dashboard = () => {
             onUpdateStatus={(id, status) => updateSale({ id, status })}
             onDelete={deleteSale}
           />
+        </TabsContent>
+
+        <TabsContent value="commission">
+          <SellerCommissionPanel />
         </TabsContent>
 
         {isAdmin && (
