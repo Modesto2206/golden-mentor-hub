@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, DollarSign, TrendingUp, Shield, BarChart3, Settings2 } from "lucide-react";
+import { Building2, Users, DollarSign, TrendingUp, Shield, BarChart3, Settings2, ShoppingCart, Ghost } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import CompanyManagementDialog from "@/components/superadmin/CompanyManagementDialog";
 
-const planPrices: Record<string, number> = { basico: 97, profissional: 197, enterprise: 497 };
-const planLabels: Record<string, string> = { basico: "Básico", profissional: "Profissional", enterprise: "Enterprise" };
+const planPrices: Record<string, number> = { basico: 97, profissional: 197, enterprise: 497, ghost: 0 };
+const planLabels: Record<string, string> = { basico: "Básico", profissional: "Profissional", enterprise: "Enterprise", ghost: "Ghost" };
 const statusLabels: Record<string, string> = { active: "Ativa", suspended: "Suspensa", canceled: "Cancelada" };
 const statusColors: Record<string, string> = {
   active: "bg-green-500/10 text-green-500 border-green-500/30",
@@ -46,17 +46,31 @@ const SuperAdminDashboard = () => {
     enabled: isSuperAdmin,
   });
 
+  const { data: totalSalesCount = 0 } = useQuery({
+    queryKey: ["super-admin-sales-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase.from("sales").select("id", { count: "exact", head: true });
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: isSuperAdmin,
+  });
+
   const stats = useMemo(() => {
-    const total = companies.length;
-    const active = companies.filter((c) => c.status === "active" || !c.status).length;
-    const suspended = companies.filter((c) => c.status === "suspended").length;
-    const canceled = companies.filter((c) => c.status === "canceled").length;
-    const mrr = companies
+    // Exclude ghost companies from financial metrics
+    const nonGhost = companies.filter((c) => c.plano !== "ghost");
+    const ghostCompanies = companies.filter((c) => c.plano === "ghost");
+
+    const total = nonGhost.length;
+    const active = nonGhost.filter((c) => c.status === "active" || !c.status).length;
+    const suspended = nonGhost.filter((c) => c.status === "suspended").length;
+    const canceled = nonGhost.filter((c) => c.status === "canceled").length;
+    const mrr = nonGhost
       .filter((c) => c.status === "active" || !c.status)
       .reduce((sum, c) => sum + (planPrices[c.plano || "basico"] || 0), 0);
 
     const byPlan = new Map<string, { count: number; revenue: number }>();
-    companies.forEach((c) => {
+    nonGhost.forEach((c) => {
       const plan = c.plano || "basico";
       const existing = byPlan.get(plan) || { count: 0, revenue: 0 };
       existing.count++;
@@ -71,11 +85,13 @@ const SuperAdminDashboard = () => {
       }
     });
 
+    const totalUsers = allProfiles.filter((p) => p.is_active).length;
+
     const thisMonth = new Date();
     thisMonth.setDate(1);
-    const newThisMonth = companies.filter((c) => new Date(c.created_at) >= thisMonth).length;
+    const newThisMonth = nonGhost.filter((c) => new Date(c.created_at) >= thisMonth).length;
 
-    return { total, active, suspended, canceled, mrr, byPlan, usersPerCompany, newThisMonth };
+    return { total, active, suspended, canceled, mrr, byPlan, usersPerCompany, newThisMonth, totalUsers, ghostCount: ghostCompanies.length };
   }, [companies, allProfiles]);
 
   const fmt = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -99,13 +115,16 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="border-border/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-                <Building2 className="w-4 h-4" /> Total Empresas
+                <Building2 className="w-4 h-4" /> Empresas
               </div>
               <p className="text-2xl font-bold">{stats.total}</p>
+              {stats.ghostCount > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">+ {stats.ghostCount} ghost</p>
+              )}
             </CardContent>
           </Card>
           <Card className="border-border/50">
@@ -130,9 +149,20 @@ const SuperAdminDashboard = () => {
           <Card className="border-border/50">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
+                <Users className="w-4 h-4" /> Total Usuários
+              </div>
+              <p className="text-2xl font-bold">{stats.totalUsers}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
                 <TrendingUp className="w-4 h-4" /> Novos este mês
               </div>
               <p className="text-2xl font-bold">{stats.newThisMonth}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                <ShoppingCart className="w-3 h-3 inline mr-1" />{totalSalesCount} vendas globais
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -180,24 +210,46 @@ const SuperAdminDashboard = () => {
                   const userCount = stats.usersPerCompany.get(company.id) || 0;
                   const maxUsers = company.max_users || 2;
                   const status = company.status || "active";
+                  const isGhost = company.plano === "ghost";
                   return (
-                    <TableRow key={company.id}>
-                      <TableCell className="font-medium">{company.name}</TableCell>
+                    <TableRow key={company.id} className={isGhost ? "opacity-60" : ""}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {company.name}
+                          {isGhost && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-muted border-muted-foreground/20">
+                              <Ghost className="w-3 h-3 mr-0.5" /> Ghost
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{company.cnpj || "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {planLabels[company.plano || "basico"] || company.plano}
-                        </Badge>
+                        {isGhost ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            {planLabels[company.plano || "basico"] || company.plano}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <span className={userCount >= maxUsers ? "text-destructive font-medium" : ""}>
-                          {userCount}/{maxUsers}
-                        </span>
+                        {isGhost ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          <span className={userCount >= maxUsers ? "text-destructive font-medium" : ""}>
+                            {userCount}/{maxUsers}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`text-xs ${statusColors[status] || ""}`}>
-                          {statusLabels[status] || status}
-                        </Badge>
+                        {isGhost ? (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        ) : (
+                          <Badge variant="outline" className={`text-xs ${statusColors[status] || ""}`}>
+                            {statusLabels[status] || status}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">
                         {new Date(company.created_at).toLocaleDateString("pt-BR")}

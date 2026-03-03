@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.setup-new-user]
 verify_jwt = false
+
+[functions.manage-company]
+verify_jwt = false
+
+[functions.calculate-commission]
+verify_jwt = false
