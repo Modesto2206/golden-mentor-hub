@@ -553,6 +553,44 @@ export type Database = {
         }
         Relationships: []
       }
+      company_goals: {
+        Row: {
+          company_id: string
+          created_at: string
+          goal_value: number
+          id: string
+          month: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          goal_value?: number
+          id?: string
+          month: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          goal_value?: number
+          id?: string
+          month?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           accent_color: string | null

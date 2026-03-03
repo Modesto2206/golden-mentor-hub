@@ -9,6 +9,7 @@ export interface WidgetConfig {
 
 const DEFAULT_LAYOUT: WidgetConfig[] = [
   { id: "stats", label: "Estatísticas", visible: true },
+  { id: "companyGoal", label: "Meta Global da Empresa", visible: true },
   { id: "charts", label: "Gráficos de Vendas", visible: true },
   { id: "ranking", label: "Ranking de Vendas", visible: true },
   { id: "projection", label: "Projeção de Vendas", visible: true },
