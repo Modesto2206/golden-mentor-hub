@@ -17,7 +17,7 @@ const formatCurrency = (value: number) => {
 };
 
 const DashboardStats = ({ sales, monthlyGoal = 20000 }: DashboardStatsProps) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -74,7 +74,7 @@ const DashboardStats = ({ sales, monthlyGoal = 20000 }: DashboardStatsProps) => 
       icon: Target,
       description: formatCurrency(monthlyGoal),
       progress: goalProgress,
-      showEdit: isAdmin,
+      showEdit: isAdmin || isSuperAdmin,
     },
   ];
 
