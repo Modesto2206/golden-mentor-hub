@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MoreHorizontal, Trash2, CheckCircle, XCircle, Clock, User, Edit, Eye, Download } from "lucide-react";
+import { MoreHorizontal, Trash2, CheckCircle, XCircle, Clock, User, Edit, Eye, Download, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SaleStatus } from "@/hooks/useSales";
 import { SaleWithProfile } from "@/hooks/useSalesWithProfiles";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +38,22 @@ const statusConfig: Record<SaleStatus, { label: string; variant: "default" | "se
   cancelado: { label: "Cancelado", variant: "destructive", icon: XCircle },
 };
 
+// Generate last 12 months options
+const getMonthOptions = () => {
+  const options = [];
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const date = subMonths(now, i);
+    options.push({
+      value: format(date, "yyyy-MM"),
+      label: format(date, "MMMM yyyy", { locale: ptBR }),
+      start: startOfMonth(date),
+      end: endOfMonth(date),
+    });
+  }
+  return options;
+};
+
 const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }: SalesTableProps) => {
   const { isAdmin, isSuperAdmin, user } = useAuth();
   const { toast } = useToast();
@@ -46,6 +63,7 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
   const [statusFilter, setStatusFilter] = useState<SaleStatus | "all">("all");
   const [covenantFilter, setCovenantFilter] = useState<string>("all");
   const [sellerFilter, setSellerFilter] = useState<string>("all");
+  const [exportOpen, setExportOpen] = useState(false);
 
   const filteredSales = sales.filter((sale) => {
     if (statusFilter !== "all" && sale.status !== statusFilter) return false;
@@ -55,50 +73,98 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
   });
 
   const covenantTypes = [...new Set(sales.map((s) => s.covenant_type))];
+  const monthOptions = getMonthOptions();
 
   const canManageSale = (sale: SaleWithProfile) => {
     return isAdmin || isSuperAdmin || sale.seller_id === user?.id;
   };
 
-  const exportToCSV = () => {
-    const now = new Date();
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  const exportMonth = (monthValue: string) => {
+    const option = monthOptions.find((m) => m.value === monthValue);
+    if (!option) return;
 
     const monthSales = filteredSales.filter((sale) => {
       const saleDate = new Date(sale.sale_date);
-      return saleDate >= lastMonth && saleDate <= lastMonthEnd;
+      return saleDate >= option.start && saleDate <= option.end;
     });
 
     if (monthSales.length === 0) {
-      toast({ variant: "destructive", title: "Sem dados", description: "Nenhuma venda encontrada no mês anterior." });
+      toast({ variant: "destructive", title: "Sem dados", description: `Nenhuma venda encontrada em ${option.label}.` });
       return;
     }
 
-    const headers = ["Cliente", "Vendedor", "Valor Liberado", "Comissão (%)", "Comissão (R$)", "Convênio", "Operação", "Instituição", "Status", "Data"];
-    const rows = monthSales.map((s) => [
-      s.client_name,
-      s.seller_name || "—",
-      Number(s.released_value).toFixed(2),
-      (Number(s.commission_percentage) * 100).toFixed(2),
-      Number(s.commission_value).toFixed(2),
-      s.covenant_type,
-      s.operation_type || "—",
-      s.financial_institution || "—",
-      statusConfig[s.status].label,
-      format(new Date(s.sale_date), "dd/MM/yyyy"),
-    ]);
+    // Sort by date
+    monthSales.sort((a, b) => new Date(a.sale_date).getTime() - new Date(b.sale_date).getTime());
 
-    const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
+    // Summary stats
+    const totalValue = monthSales.reduce((s, v) => s + Number(v.released_value), 0);
+    const totalCommission = monthSales.reduce((s, v) => s + Number(v.commission_value || 0), 0);
+    const paidCount = monthSales.filter((s) => s.status === "pago").length;
+    const pendingCount = monthSales.filter((s) => s.status === "em_andamento").length;
+    const canceledCount = monthSales.filter((s) => s.status === "cancelado").length;
+
+    const sep = ";"; // semicolon for better Google Sheets compatibility in pt-BR
+    const lines: string[] = [];
+
+    // Header section
+    lines.push(`RELATÓRIO DE VENDAS - ${option.label.toUpperCase()}`);
+    lines.push("");
+    lines.push(`Data de Exportação${sep}${format(new Date(), "dd/MM/yyyy HH:mm")}`);
+    lines.push(`Total de Vendas${sep}${monthSales.length}`);
+    lines.push(`Pagas${sep}${paidCount}`);
+    lines.push(`Em Andamento${sep}${pendingCount}`);
+    lines.push(`Canceladas${sep}${canceledCount}`);
+    lines.push(`Valor Total Liberado${sep}${formatCurrency(totalValue)}`);
+    lines.push(`Total Comissões${sep}${formatCurrency(totalCommission)}`);
+    lines.push("");
+
+    // Data header
+    lines.push(
+      ["#", "Data", "Cliente", "Vendedor", "Convênio", "Tipo Operação", "Instituição", "Valor Liberado (R$)", "Comissão (%)", "Comissão (R$)", "Status", "Observações"]
+        .join(sep)
+    );
+
+    // Data rows
+    monthSales.forEach((s, i) => {
+      lines.push(
+        [
+          (i + 1).toString(),
+          format(new Date(s.sale_date), "dd/MM/yyyy"),
+          `"${s.client_name}"`,
+          `"${s.seller_name || "—"}"`,
+          s.covenant_type,
+          s.operation_type || "—",
+          `"${s.financial_institution || "—"}"`,
+          Number(s.released_value).toFixed(2).replace(".", ","),
+          (Number(s.commission_percentage) * 100).toFixed(2).replace(".", ",") + "%",
+          Number(s.commission_value || 0).toFixed(2).replace(".", ","),
+          statusConfig[s.status].label,
+          `"${(s.observations || "").replace(/"/g, '""')}"`,
+        ].join(sep)
+      );
+    });
+
+    // Footer totals
+    lines.push("");
+    lines.push(
+      ["", "", "", "", "", "", "TOTAL",
+        totalValue.toFixed(2).replace(".", ","),
+        "",
+        totalCommission.toFixed(2).replace(".", ","),
+        "", ""].join(sep)
+    );
+
+    const csv = lines.join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `vendas_${format(lastMonth, "yyyy-MM")}.csv`;
+    a.download = `vendas_${monthValue}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 
-    toast({ title: "Exportado!", description: `${monthSales.length} vendas exportadas com sucesso.` });
+    toast({ title: "Exportado!", description: `${monthSales.length} vendas de ${option.label} exportadas.` });
+    setExportOpen(false);
   };
 
   return (
@@ -113,9 +179,31 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={exportToCSV}>
-                <Download className="w-4 h-4 mr-1" /> Exportar Mês
-              </Button>
+              {/* Export with month selection */}
+              <Popover open={exportOpen} onOpenChange={setExportOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-1" />
+                    <CalendarIcon className="w-3 h-3 mr-1" />
+                    Exportar
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2" align="end">
+                  <p className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">Selecione o mês</p>
+                  <div className="max-h-60 overflow-y-auto space-y-0.5">
+                    {monthOptions.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => exportMonth(opt.value)}
+                        className="w-full text-left text-sm px-2 py-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors capitalize"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as SaleStatus | "all")}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Status" />
