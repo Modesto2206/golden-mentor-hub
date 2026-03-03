@@ -222,6 +222,21 @@ Deno.serve(async (req) => {
         .eq("user_id", adminUserId);
     }
 
+    // 10. Auto-generate billing (except ghost plan)
+    if (plano !== "ghost") {
+      const planPrices: Record<string, number> = { basico: 97, profissional: 197, enterprise: 497 };
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      await supabaseAdmin.from("company_billing").insert({
+        company_id: company.id,
+        plan_type: plano,
+        amount: planPrices[plano] || 97,
+        due_date: dueDate.toISOString().split("T")[0],
+        status: "pending",
+      });
+      console.log("Billing gerado para empresa:", company.id);
+    }
+
     console.log("Empresa e admin criados com sucesso:", {
       company_id: company.id,
       company_name: company.name,

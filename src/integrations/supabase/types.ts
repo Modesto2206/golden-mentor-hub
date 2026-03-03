@@ -501,6 +501,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          cancelled_at: string | null
           cnpj: string | null
           created_at: string
           deleted_at: string | null
@@ -518,6 +519,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancelled_at?: string | null
           cnpj?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -535,6 +537,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancelled_at?: string | null
           cnpj?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -552,6 +555,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      company_billing: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string
+          due_date: string
+          id: string
+          paid_at: string | null
+          plan_type: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          company_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_at?: string | null
+          plan_type?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_at?: string | null
+          plan_type?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_billing_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_goals: {
         Row: {

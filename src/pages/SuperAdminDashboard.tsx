@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Building2, Users, DollarSign, TrendingUp, Shield, BarChart3, Settings2, ShoppingCart, Ghost } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import CompanyManagementDialog from "@/components/superadmin/CompanyManagementDialog";
+import FinancialDashboard from "@/components/superadmin/FinancialDashboard";
+import CompanyHealthScore from "@/components/superadmin/CompanyHealthScore";
 
 const planPrices: Record<string, number> = { basico: 97, profissional: 197, enterprise: 497, ghost: 0 };
 const planLabels: Record<string, string> = { basico: "Básico", profissional: "Profissional", enterprise: "Enterprise", ghost: "Ghost" };
@@ -273,6 +275,12 @@ const SuperAdminDashboard = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Financial Dashboard */}
+        <FinancialDashboard />
+
+        {/* Health Score */}
+        <CompanyHealthScore />
       </div>
 
       <CompanyManagementDialog
