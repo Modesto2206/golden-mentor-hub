@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCompanyGoal } from "@/hooks/useCompanyGoal";
+import { useMonthlyGoal } from "@/hooks/useMonthlyGoal";
 
 const goalSchema = z.object({
   target_value: z.coerce.number().positive("Valor deve ser maior que zero"),
@@ -21,7 +21,7 @@ interface MonthlyGoalModalProps {
 
 const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
   const [open, setOpen] = useState(false);
-  const { upsertGoal, isUpdating } = useCompanyGoal();
+  const { upsertGoal, isUpdating } = useMonthlyGoal();
 
   const form = useForm<GoalFormData>({
     resolver: zodResolver(goalSchema),
@@ -54,7 +54,7 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
             Definir Meta Mensal
           </DialogTitle>
           <DialogDescription>
-            Altere o valor da meta de vendas para o mês atual. Essa meta será aplicada para toda a empresa.
+            Altere o valor da meta mensal de vendas. Essa meta é usada como referência padrão para os vendedores.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
