@@ -7,10 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCompanyGoal } from "@/hooks/useCompanyGoal";
 
 const goalSchema = z.object({
   target_value: z.coerce.number().positive("Valor deve ser maior que zero"),
@@ -24,10 +21,7 @@ interface MonthlyGoalModalProps {
 
 const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { companyId } = useAuth();
+  const { upsertGoal, isUpdating } = useCompanyGoal();
 
   const form = useForm<GoalFormData>({
     resolver: zodResolver(goalSchema),
@@ -40,53 +34,10 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
     form.setValue("target_value", currentGoal);
   }, [currentGoal, form]);
 
-  const handleSubmit = async (data: GoalFormData) => {
-    setIsSubmitting(true);
-    try {
-      const now = new Date();
-      const month = now.getMonth() + 1;
-      const year = now.getFullYear();
-
-      // Try to update existing goal, or insert new one
-      const { data: existing } = await supabase
-        .from("monthly_goals")
-        .select("id")
-        .eq("month", month)
-        .eq("year", year)
-        .eq("company_id", companyId!)
-        .maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("monthly_goals")
-          .update({ target_value: data.target_value })
-          .eq("id", existing.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("monthly_goals")
-          .insert({ month, year, target_value: data.target_value, company_id: companyId });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Meta atualizada!",
-        description: `A meta mensal foi definida para R$ ${data.target_value.toLocaleString("pt-BR")}.`,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["monthly-goal"] });
-      setOpen(false);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao atualizar meta",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = (data: GoalFormData) => {
+    upsertGoal(data.target_value, {
+      onSuccess: () => setOpen(false),
+    });
   };
 
   return (
@@ -103,7 +54,7 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
             Definir Meta Mensal
           </DialogTitle>
           <DialogDescription>
-            Altere o valor da meta de vendas para o mês atual.
+            Altere o valor da meta de vendas para o mês atual. Essa meta será aplicada para toda a empresa.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -132,8 +83,8 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
+              <Button type="submit" disabled={isUpdating}>
+                {isUpdating ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Salvando...

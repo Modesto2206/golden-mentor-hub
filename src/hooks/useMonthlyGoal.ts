@@ -9,27 +9,24 @@ export const useMonthlyGoal = () => {
   const year = now.getFullYear();
 
   const goalQuery = useQuery({
-    queryKey: ["monthly-goal", month, year, companyId],
+    queryKey: ["company-goal", companyId, month, year],
     queryFn: async () => {
-      const query = supabase
-        .from("monthly_goals")
+      const { data, error } = await supabase
+        .from("company_goals")
         .select("*")
+        .eq("company_id", companyId!)
         .eq("month", month)
-        .eq("year", year);
+        .eq("year", year)
+        .maybeSingle();
 
-      if (companyId) {
-        query.eq("company_id", companyId);
-      }
-
-      const { data, error } = await query.maybeSingle();
       if (error) throw error;
-      return data?.target_value ?? 20000;
+      return data?.goal_value ?? 0;
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   return {
-    monthlyGoal: goalQuery.data ?? 20000,
+    monthlyGoal: goalQuery.data ?? 0,
     isLoading: goalQuery.isLoading,
     error: goalQuery.error,
   };
