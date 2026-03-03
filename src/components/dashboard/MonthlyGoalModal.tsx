@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 const goalSchema = z.object({
   target_value: z.coerce.number().positive("Valor deve ser maior que zero"),
@@ -26,6 +27,7 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { companyId } = useAuth();
 
   const form = useForm<GoalFormData>({
     resolver: zodResolver(goalSchema),
@@ -51,6 +53,7 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
         .select("id")
         .eq("month", month)
         .eq("year", year)
+        .eq("company_id", companyId!)
         .maybeSingle();
 
       if (existing) {
@@ -63,7 +66,7 @@ const MonthlyGoalModal = ({ currentGoal }: MonthlyGoalModalProps) => {
       } else {
         const { error } = await supabase
           .from("monthly_goals")
-          .insert({ month, year, target_value: data.target_value });
+          .insert({ month, year, target_value: data.target_value, company_id: companyId });
 
         if (error) throw error;
       }
