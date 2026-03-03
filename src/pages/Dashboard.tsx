@@ -23,6 +23,7 @@ import GoalsTrackingPanel from "@/components/dashboard/GoalsTrackingPanel";
 import SortableWidget from "@/components/dashboard/SortableWidget";
 import EditModeToolbar from "@/components/dashboard/EditModeToolbar";
 import AppLayout from "@/components/AppLayout";
+import BillingAlert from "@/components/dashboard/BillingAlert";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
@@ -64,6 +65,8 @@ const Dashboard = () => {
           <TabsTrigger value="goals"><Target className="w-4 h-4 mr-1" />Metas</TabsTrigger>
           {isAdmin && <TabsTrigger value="team"><Users className="w-4 h-4 mr-1" />Equipe</TabsTrigger>}
         </TabsList>
+
+        <BillingAlert />
 
         <TabsContent value="dashboard" className="space-y-4">
           <div className="flex justify-end">

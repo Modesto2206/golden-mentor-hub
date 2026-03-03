@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.calculate-commission]
 verify_jwt = false
+
+[functions.billing-automation]
+verify_jwt = false
