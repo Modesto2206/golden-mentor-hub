@@ -30,6 +30,7 @@ export const useCompanyGoal = () => {
 
   const upsertGoal = useMutation({
     mutationFn: async (goalValue: number) => {
+      if (!companyId) throw new Error("Empresa não identificada. Faça login novamente.");
       const existing = goalQuery.data;
 
       if (existing) {
