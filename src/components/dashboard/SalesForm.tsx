@@ -3,6 +3,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, DollarSign, Percent } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,15 @@ const formatCurrency = (value: number) => {
 };
 
 const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
+  const { isAdmin, isSuperAdmin } = useAuth();
+  const showCommission = isAdmin || isSuperAdmin;
+
   const form = useForm<SaleFormData>({
     resolver: zodResolver(saleSchema),
     defaultValues: {
       client_name: "",
       released_value: 0,
-      commission_percentage: 5,
+      commission_percentage: 0,
       sale_date: new Date(),
       observations: "",
     },
@@ -185,30 +189,32 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="commission_percentage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Porcentagem de Comissão (%)</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          {...field}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          placeholder="5.00"
-                          className="pl-10"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {showCommission && (
+                <FormField
+                  control={form.control}
+                  name="commission_percentage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Porcentagem de Comissão (%)</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            {...field}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            placeholder="0.00"
+                            className="pl-10"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
@@ -247,13 +253,15 @@ const SalesForm = ({ onSubmit, isSubmitting }: SalesFormProps) => {
                 )}
               />
 
-              {/* Commission Preview */}
-              <div className="flex flex-col justify-end">
-                <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-                  <p className="text-sm text-muted-foreground">Comissão calculada:</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(calculatedCommission)}</p>
+              {/* Commission Preview - only for admins */}
+              {showCommission && (
+                <div className="flex flex-col justify-end">
+                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+                    <p className="text-sm text-muted-foreground">Comissão calculada:</p>
+                    <p className="text-2xl font-bold text-primary">{formatCurrency(calculatedCommission)}</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <FormField
