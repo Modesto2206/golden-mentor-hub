@@ -18,6 +18,7 @@ const planLimits: Record<string, number> = {
   basico: 2,
   profissional: 5,
   enterprise: 10,
+  ghost: 999,
 };
 
 Deno.serve(async (req) => {
@@ -66,8 +67,8 @@ Deno.serve(async (req) => {
         email: z.string().email().max(255).optional().nullable(),
         phone: z.string().max(20).optional().nullable(),
         responsavel: z.string().max(200).optional().nullable(),
-        plano: z.enum(["basico", "profissional", "enterprise"]).optional(),
-        max_users: z.number().int().min(1).max(100).optional(),
+        plano: z.enum(["basico", "profissional", "enterprise", "ghost"]).optional(),
+        max_users: z.number().int().min(1).max(999).optional(),
         status: z.enum(["active", "suspended", "canceled"]).optional(),
       });
 

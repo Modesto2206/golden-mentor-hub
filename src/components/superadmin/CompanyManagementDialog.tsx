@@ -44,7 +44,6 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
     status: "active",
   });
 
-  // Sync form when company changes
   useEffect(() => {
     if (company) {
       setForm({
@@ -59,6 +58,8 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
       });
     }
   }, [company]);
+
+  const isGhost = form.plano === "ghost";
 
   const handleSave = async () => {
     if (!company) return;
@@ -158,7 +159,7 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
             <div>
               <Label>Plano</Label>
               <Select value={form.plano} onValueChange={(v) => {
-                const limits: Record<string, number> = { basico: 2, profissional: 5, enterprise: 10 };
+                const limits: Record<string, number> = { basico: 2, profissional: 5, enterprise: 10, ghost: 999 };
                 setForm((f) => ({ ...f, plano: v, max_users: limits[v] || f.max_users }));
               }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -166,6 +167,7 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
                   <SelectItem value="basico">Básico</SelectItem>
                   <SelectItem value="profissional">Profissional</SelectItem>
                   <SelectItem value="enterprise">Enterprise</SelectItem>
+                  <SelectItem value="ghost">⚫ Ghost</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -174,9 +176,10 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
               <Input
                 type="number"
                 min={1}
-                max={100}
+                max={999}
                 value={form.max_users}
                 onChange={(e) => setForm((f) => ({ ...f, max_users: parseInt(e.target.value) || 2 }))}
+                disabled={isGhost}
               />
             </div>
             <div>
@@ -191,6 +194,12 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
               </Select>
             </div>
           </div>
+
+          {isGhost && (
+            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              ⚫ Empresa Ghost: não entra em cálculos de MRR, receita ou métricas financeiras.
+            </p>
+          )}
         </div>
 
         <DialogFooter className="flex justify-between items-center gap-2 sm:justify-between">
@@ -210,7 +219,7 @@ const CompanyManagementDialog = ({ company, open, onOpenChange }: Props) => {
                   <AlertDialogDescription>
                     <strong>Exclusão suave (recomendado):</strong> Marca como cancelada, preserva todos os dados históricos.
                     <br /><br />
-                    <strong>Exclusão permanente:</strong> Remove todos os dados. Só é possível se não houver registros financeiros.
+                    <strong>Exclusão permanente:</strong> Remove todos os dados (CASCADE). Só é possível se não houver registros financeiros.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
