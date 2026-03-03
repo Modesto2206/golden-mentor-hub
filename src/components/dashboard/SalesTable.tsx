@@ -63,17 +63,26 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
   const [statusFilter, setStatusFilter] = useState<SaleStatus | "all">("all");
   const [covenantFilter, setCovenantFilter] = useState<string>("all");
   const [sellerFilter, setSellerFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
   const [exportOpen, setExportOpen] = useState(false);
+
+  const monthOptions = getMonthOptions();
 
   const filteredSales = sales.filter((sale) => {
     if (statusFilter !== "all" && sale.status !== statusFilter) return false;
     if (covenantFilter !== "all" && sale.covenant_type !== covenantFilter) return false;
     if (sellerFilter !== "all" && sale.seller_id !== sellerFilter) return false;
+    if (monthFilter !== "all") {
+      const opt = monthOptions.find((m) => m.value === monthFilter);
+      if (opt) {
+        const saleDate = new Date(sale.sale_date);
+        if (saleDate < opt.start || saleDate > opt.end) return false;
+      }
+    }
     return true;
   });
 
   const covenantTypes = [...new Set(sales.map((s) => s.covenant_type))];
-  const monthOptions = getMonthOptions();
 
   const canManageSale = (sale: SaleWithProfile) => {
     return isAdmin || isSuperAdmin || sale.seller_id === user?.id;
@@ -203,6 +212,20 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
                   </div>
                 </PopoverContent>
               </Popover>
+
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Meses</SelectItem>
+                  {monthOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="capitalize">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as SaleStatus | "all")}>
                 <SelectTrigger className="w-[140px]">
