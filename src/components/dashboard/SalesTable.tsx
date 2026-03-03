@@ -14,6 +14,7 @@ import { SaleStatus } from "@/hooks/useSales";
 import { SaleWithProfile } from "@/hooks/useSalesWithProfiles";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import EditSaleDialog from "./EditSaleDialog";
 
 interface SalesTableProps {
   sales: SaleWithProfile[];
@@ -41,6 +42,7 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
   const { toast } = useToast();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSale, setDetailSale] = useState<SaleWithProfile | null>(null);
+  const [editSale, setEditSale] = useState<SaleWithProfile | null>(null);
   const [statusFilter, setStatusFilter] = useState<SaleStatus | "all">("all");
   const [covenantFilter, setCovenantFilter] = useState<string>("all");
   const [sellerFilter, setSellerFilter] = useState<string>("all");
@@ -246,6 +248,12 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
                                 <Eye className="w-4 h-4 mr-2" />
                                 Ver Detalhes
                               </DropdownMenuItem>
+                              {canManage && (
+                                <DropdownMenuItem onClick={() => setEditSale(sale)}>
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Editar Venda
+                                </DropdownMenuItem>
+                              )}
                               {canManage && sale.status === "em_andamento" && (
                                 <DropdownMenuItem onClick={() => onUpdateStatus(sale.id, "pago")}>
                                   <CheckCircle className="w-4 h-4 mr-2" />
@@ -309,6 +317,8 @@ const SalesTable = ({ sales, sellers = [], onUpdateStatus, onDelete, isLoading }
           )}
         </DialogContent>
       </Dialog>
+
+      <EditSaleDialog sale={editSale} open={!!editSale} onOpenChange={(o) => !o && setEditSale(null)} />
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>

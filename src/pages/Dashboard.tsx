@@ -6,19 +6,20 @@ import {
   arrayMove, SortableContext, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, List, Users, Award } from "lucide-react";
+import { PlusCircle, List, Users, Target } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSalesWithProfiles } from "@/hooks/useSalesWithProfiles";
 import { useMonthlyGoal } from "@/hooks/useMonthlyGoal";
 import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import DashboardStats from "@/components/dashboard/DashboardStats";
+import CompanyGoalCard from "@/components/dashboard/CompanyGoalCard";
 import SalesForm from "@/components/dashboard/SalesForm";
 import SalesTable from "@/components/dashboard/SalesTable";
 import SalesCharts from "@/components/dashboard/SalesCharts";
 import SalesRanking from "@/components/dashboard/SalesRanking";
 import SalesProjection from "@/components/dashboard/SalesProjection";
 import TeamManagement from "@/components/dashboard/TeamManagement";
-import SellerCommissionPanel from "@/components/dashboard/SellerCommissionPanel";
+import GoalsTrackingPanel from "@/components/dashboard/GoalsTrackingPanel";
 import SortableWidget from "@/components/dashboard/SortableWidget";
 import EditModeToolbar from "@/components/dashboard/EditModeToolbar";
 import AppLayout from "@/components/AppLayout";
@@ -38,6 +39,7 @@ const Dashboard = () => {
 
   const widgetContentMap: Record<string, ReactNode> = {
     stats: <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />,
+    companyGoal: <CompanyGoalCard sales={sales} />,
     charts: <SalesCharts sales={sales} />,
     ranking: <SalesRanking sales={sales} />,
     projection: <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />,
@@ -59,7 +61,7 @@ const Dashboard = () => {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="new-sale"><PlusCircle className="w-4 h-4 mr-1" />Nova Venda</TabsTrigger>
           <TabsTrigger value="sales"><List className="w-4 h-4 mr-1" />Vendas</TabsTrigger>
-          <TabsTrigger value="commission"><Award className="w-4 h-4 mr-1" />Comissão</TabsTrigger>
+          <TabsTrigger value="goals"><Target className="w-4 h-4 mr-1" />Metas</TabsTrigger>
           {isAdmin && <TabsTrigger value="team"><Users className="w-4 h-4 mr-1" />Equipe</TabsTrigger>}
         </TabsList>
 
@@ -108,8 +110,8 @@ const Dashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="commission">
-          <SellerCommissionPanel />
+        <TabsContent value="goals">
+          <GoalsTrackingPanel />
         </TabsContent>
 
         {isAdmin && (
