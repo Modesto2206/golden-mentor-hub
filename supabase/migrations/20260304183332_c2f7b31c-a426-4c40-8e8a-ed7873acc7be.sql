@@ -1,0 +1,1 @@
+ALTER TABLE public.monthly_goals REPLICA IDENTITY FULL;
