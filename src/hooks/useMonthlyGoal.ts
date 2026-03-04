@@ -14,15 +14,13 @@ export const useMonthlyGoal = () => {
   const goalQuery = useQuery({
     queryKey: ["monthly-goal", companyId, month, year],
     queryFn: async () => {
-      const query = supabase
+      const { data, error } = await supabase
         .from("monthly_goals")
         .select("*")
+        .eq("company_id", companyId!)
         .eq("month", month)
-        .eq("year", year);
-
-      if (companyId) query.eq("company_id", companyId);
-
-      const { data, error } = await query.maybeSingle();
+        .eq("year", year)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
