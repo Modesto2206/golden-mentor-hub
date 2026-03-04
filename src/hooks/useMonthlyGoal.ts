@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,31 @@ export const useMonthlyGoal = () => {
     },
     enabled: !!user && !!companyId,
   });
+
+  // Realtime subscription for instant sync across all users
+  useEffect(() => {
+    if (!companyId) return;
+
+    const channel = supabase
+      .channel(`monthly-goals-${companyId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "monthly_goals",
+          filter: `company_id=eq.${companyId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["monthly-goal", companyId, month, year] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [companyId, month, year, queryClient]);
 
   const upsertGoal = useMutation({
     mutationFn: async (goalValue: number) => {
