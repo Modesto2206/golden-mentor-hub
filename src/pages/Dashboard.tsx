@@ -24,9 +24,10 @@ import SortableWidget from "@/components/dashboard/SortableWidget";
 import EditModeToolbar from "@/components/dashboard/EditModeToolbar";
 import AppLayout from "@/components/AppLayout";
 import BillingAlert from "@/components/dashboard/BillingAlert";
+import SellerCommissionPanel from "@/components/dashboard/SellerCommissionPanel";
 
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isVendedor } = useAuth();
   const { sales, sellers, isLoading, createSale, updateSale, deleteSale, isCreating } = useSalesWithProfiles();
   const { monthlyGoal } = useMonthlyGoal();
   const {
@@ -97,6 +98,9 @@ const Dashboard = () => {
               </div>
             </SortableContext>
           </DndContext>
+
+          {/* Seller Commission Panel */}
+          <SellerCommissionPanel />
         </TabsContent>
 
         <TabsContent value="new-sale">
