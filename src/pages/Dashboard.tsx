@@ -99,8 +99,6 @@ const Dashboard = () => {
             </SortableContext>
           </DndContext>
 
-          {/* Seller Commission Panel */}
-          <SellerCommissionPanel />
         </TabsContent>
 
         <TabsContent value="new-sale">
@@ -117,8 +115,9 @@ const Dashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="goals">
+        <TabsContent value="goals" className="space-y-4">
           <GoalsTrackingPanel />
+          <SellerCommissionPanel />
         </TabsContent>
 
         {isAdmin && (
