@@ -27,7 +27,7 @@ import BillingAlert from "@/components/dashboard/BillingAlert";
 import SellerCommissionPanel from "@/components/dashboard/SellerCommissionPanel";
 
 const Dashboard = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isVendedor } = useAuth();
   const { sales, sellers, isLoading, createSale, updateSale, deleteSale, isCreating } = useSalesWithProfiles();
   const { monthlyGoal } = useMonthlyGoal();
   const {
