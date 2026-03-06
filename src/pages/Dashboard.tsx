@@ -24,6 +24,7 @@ import SortableWidget from "@/components/dashboard/SortableWidget";
 import EditModeToolbar from "@/components/dashboard/EditModeToolbar";
 import AppLayout from "@/components/AppLayout";
 import BillingAlert from "@/components/dashboard/BillingAlert";
+import SellerCommissionPanel from "@/components/dashboard/SellerCommissionPanel";
 
 const Dashboard = () => {
   const { isAdmin } = useAuth();
