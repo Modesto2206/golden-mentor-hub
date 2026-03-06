@@ -98,6 +98,9 @@ const Dashboard = () => {
               </div>
             </SortableContext>
           </DndContext>
+
+          {/* Seller Commission Panel */}
+          <SellerCommissionPanel />
         </TabsContent>
 
         <TabsContent value="new-sale">
