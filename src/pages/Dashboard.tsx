@@ -115,8 +115,9 @@ const Dashboard = () => {
           />
         </TabsContent>
 
-        <TabsContent value="goals">
+        <TabsContent value="goals" className="space-y-4">
           <GoalsTrackingPanel />
+          <SellerCommissionPanel />
         </TabsContent>
 
         {isAdmin && (
