@@ -107,6 +107,6 @@ export const useCompanyGoal = () => {
     isLoading: goalQuery.isLoading,
     upsertGoal: upsertGoal.mutate,
     isUpdating: upsertGoal.isPending,
-    canEdit: isAdmin,
+    canEdit: isAdmin || isSuperAdmin,
   };
 };
