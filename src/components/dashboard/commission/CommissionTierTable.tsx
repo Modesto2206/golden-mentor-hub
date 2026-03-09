@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Target } from "lucide-react";
 
 interface BracketInfo {
@@ -39,51 +38,36 @@ const CommissionTierTable = ({ brackets }: CommissionTierTableProps) => {
 
   return (
     <Card className="border-border/50">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Target className="w-4 h-4 text-primary" />
-          Metas de Comissão Mensal
+          Tabela de Faixas de Comissão
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="rounded-lg border border-border/50 overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30">
-                <TableHead className="text-xs font-semibold">Volume Mensal (BRL)</TableHead>
-                <TableHead className="text-xs font-semibold text-right">Taxa de Comissão</TableHead>
-                <TableHead className="text-xs font-semibold text-center w-24">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tiers.map((tier, i) => (
-                <TableRow
-                  key={i}
-                  className={
-                    tier.active
-                      ? "bg-primary/10 font-semibold"
-                      : tier.reached
-                      ? "bg-primary/5"
-                      : ""
-                  }
-                >
-                  <TableCell className="text-xs py-2.5">
-                    {fmt(tier.min)} – {fmt(tier.max)}
-                  </TableCell>
-                  <TableCell className={`text-xs py-2.5 text-right font-mono ${tier.active ? "text-primary font-bold" : ""}`}>
-                    {tier.rate}
-                  </TableCell>
-                  <TableCell className="text-center py-2.5">
-                    {tier.active ? (
-                      <Badge variant="default" className="text-[10px]">ATUAL</Badge>
-                    ) : tier.reached ? (
-                      <Badge variant="secondary" className="text-[10px]">✓</Badge>
-                    ) : null}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          {tiers.map((b, i) => (
+            <div
+              key={i}
+              className={`p-3 rounded-lg border text-center transition-all ${
+                b.active
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : b.reached
+                  ? "border-primary/30 bg-primary/5"
+                  : "border-border/30 bg-secondary/20 opacity-60"
+              }`}
+            >
+              <p className="text-xs text-muted-foreground">
+                {fmt(b.min)} – {fmt(b.max)}
+              </p>
+              <p className={`text-lg font-bold ${b.active ? "text-primary" : ""}`}>{b.rate}</p>
+              {b.active && (
+                <Badge variant="default" className="text-[10px] mt-1">
+                  ATUAL
+                </Badge>
+              )}
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
