@@ -1,10 +1,11 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export const useCompanyGoal = () => {
-  const { user, companyId, isAdmin } = useAuth();
+  const { user, companyId, isAdmin, isSuperAdmin } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const now = new Date();
@@ -27,6 +28,42 @@ export const useCompanyGoal = () => {
     },
     enabled: !!user && !!companyId,
   });
+
+  // Realtime subscription + polling fallback for instant sync across all users
+  useEffect(() => {
+    if (!companyId) return;
+    let isActive = true;
+    let pollTimer: ReturnType<typeof setTimeout>;
+
+    const channel = supabase
+      .channel(`company-goals-${companyId}-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "company_goals",
+          filter: `company_id=eq.${companyId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["company-goal", companyId, month, year] });
+        }
+      )
+      .subscribe();
+
+    const poll = () => {
+      if (!isActive) return;
+      queryClient.invalidateQueries({ queryKey: ["company-goal", companyId, month, year] });
+      pollTimer = setTimeout(poll, 5000);
+    };
+    pollTimer = setTimeout(poll, 5000);
+
+    return () => {
+      isActive = false;
+      clearTimeout(pollTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [companyId, month, year, queryClient]);
 
   const upsertGoal = useMutation({
     mutationFn: async (goalValue: number) => {
@@ -70,6 +107,6 @@ export const useCompanyGoal = () => {
     isLoading: goalQuery.isLoading,
     upsertGoal: upsertGoal.mutate,
     isUpdating: upsertGoal.isPending,
-    canEdit: isAdmin,
+    canEdit: isAdmin || isSuperAdmin,
   };
 };
