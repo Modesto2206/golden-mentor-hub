@@ -189,7 +189,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           {children}
         </main>
       </div>
-      <WhatsAppFAB />
     </div>
   );
 };
