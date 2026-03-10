@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddUserModal from "@/components/dashboard/AddUserModal";
+import WhatsAppButton from "@/components/WhatsAppButton";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -132,6 +133,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
           <div className="flex items-center gap-3">
             {isAdmin && <AddUserModal />}
+            <WhatsAppButton />
             <ThemeToggle />
             <div className="text-right hidden md:block">
               <p className="text-sm font-medium">{user.user_metadata?.full_name || "Usuário"}</p>
