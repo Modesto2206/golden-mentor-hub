@@ -65,7 +65,7 @@ const WhatsAppFAB = () => {
     <>
       {/* Floating panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 max-h-[70vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className="fixed bottom-24 right-6 z-[9999] w-80 max-h-[70vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
           {/* Header */}
           <div className="bg-[#25D366] px-4 py-3 flex items-center gap-3">
             <MessageCircle className="w-5 h-5 text-white" />
