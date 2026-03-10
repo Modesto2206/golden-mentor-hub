@@ -1236,7 +1236,7 @@ export type Database = {
           client_name: string
           commission_percentage: number
           commission_value: number | null
-          company_id: string | null
+          company_id: string
           covenant_type: Database["public"]["Enums"]["covenant_type"]
           created_at: string
           financial_institution: string | null
@@ -1253,7 +1253,7 @@ export type Database = {
           client_name: string
           commission_percentage: number
           commission_value?: number | null
-          company_id?: string | null
+          company_id: string
           covenant_type: Database["public"]["Enums"]["covenant_type"]
           created_at?: string
           financial_institution?: string | null
@@ -1270,7 +1270,7 @@ export type Database = {
           client_name?: string
           commission_percentage?: number
           commission_value?: number | null
-          company_id?: string | null
+          company_id?: string
           covenant_type?: Database["public"]["Enums"]["covenant_type"]
           created_at?: string
           financial_institution?: string | null
