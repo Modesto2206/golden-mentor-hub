@@ -19,6 +19,7 @@ import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@
 
 const ClientsPage = () => {
   const { companyId, isAdmin, user } = useAuth();
+  const { currentProfile } = useProfiles();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
