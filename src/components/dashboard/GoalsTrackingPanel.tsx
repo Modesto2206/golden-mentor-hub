@@ -59,6 +59,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Individual goals from `goals` table (has seller_id)
