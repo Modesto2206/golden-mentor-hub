@@ -259,7 +259,7 @@ const ClientsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((client: any) => {
+                  {paginatedClients.map((client: any) => {
                     const waLink = getWhatsAppLink(client.phone, client.full_name);
                     return (
                       <TableRow key={client.id}>
