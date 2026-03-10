@@ -38,12 +38,13 @@ const ClientsPage = () => {
     queryKey: ["clients", companyId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("clients" as any) as any)
-        .select("*")
+        .select("id, full_name, cpf, phone, birth_date, email, gender, is_active, created_by, convenio, modalidade, address_city, address_state, internal_notes")
         .order("full_name");
       if (error) throw error;
       return data as any[];
     },
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 2,
   });
 
   const createClient = useMutation({
