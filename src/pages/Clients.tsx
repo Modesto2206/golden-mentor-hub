@@ -159,10 +159,14 @@ const ClientsPage = () => {
     return `${cpf.slice(0, 3)}.***.***-${cpf.slice(-2)}`;
   };
 
-  const getWhatsAppLink = (phone: string) => {
+  const getWhatsAppLink = (phone: string, clientName: string) => {
     const digits = phone?.replace(/\D/g, "");
     if (!digits) return null;
-    return `https://wa.me/55${digits}`;
+    const sellerName = currentProfile?.full_name || "Vendedor";
+    const message = encodeURIComponent(
+      `Olá ${clientName}! Aqui é ${sellerName}, da Cred+. Tudo bem?`
+    );
+    return `https://wa.me/55${digits}?text=${message}`;
   };
 
   return (
