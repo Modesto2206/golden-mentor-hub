@@ -14,6 +14,8 @@ export interface WhatsAppSession {
   connected_at: string | null;
   created_at: string;
   updated_at: string;
+  api_url: string | null;
+  api_key: string | null;
 }
 
 export interface WhatsAppConversation {
@@ -44,6 +46,16 @@ export interface WhatsAppMessage {
   created_at: string;
 }
 
+// Helper to invoke evolution edge function
+const invokeEvolution = async (action: string, data: Record<string, any> = {}) => {
+  const { data: result, error } = await supabase.functions.invoke("whatsapp-evolution", {
+    body: { action, ...data },
+  });
+  if (error) throw error;
+  if (result && !result.success) throw new Error(result.error || "Erro desconhecido");
+  return result;
+};
+
 export const useWhatsAppSession = () => {
   const { companyId } = useAuth();
 
@@ -58,7 +70,7 @@ export const useWhatsAppSession = () => {
       return data as WhatsAppSession | null;
     },
     enabled: !!companyId,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 10,
   });
 };
 
@@ -80,18 +92,13 @@ export const useWhatsAppConversations = () => {
     staleTime: 1000 * 10,
   });
 
-  // Realtime subscription for conversations
   useEffect(() => {
     if (!companyId) return;
     const channel = supabase
       .channel("whatsapp-conversations-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "whatsapp_conversations", filter: `company_id=eq.${companyId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["whatsapp-conversations", companyId] });
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_conversations", filter: `company_id=eq.${companyId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["whatsapp-conversations", companyId] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [companyId, queryClient]);
@@ -118,20 +125,15 @@ export const useWhatsAppMessages = (phone: string | null) => {
     staleTime: 1000 * 5,
   });
 
-  // Realtime for messages
   useEffect(() => {
     if (!companyId || !phone) return;
     const channel = supabase
       .channel(`whatsapp-msgs-${phone}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "whatsapp_messages", filter: `company_id=eq.${companyId}` },
-        (payload: any) => {
-          if (payload.new?.phone === phone) {
-            queryClient.invalidateQueries({ queryKey: ["whatsapp-messages", companyId, phone] });
-          }
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "whatsapp_messages", filter: `company_id=eq.${companyId}` }, (payload: any) => {
+        if (payload.new?.phone === phone) {
+          queryClient.invalidateQueries({ queryKey: ["whatsapp-messages", companyId, phone] });
         }
-      )
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [companyId, phone, queryClient]);
@@ -140,7 +142,7 @@ export const useWhatsAppMessages = (phone: string | null) => {
 };
 
 export const useSendWhatsAppMessage = () => {
-  const { companyId, user } = useAuth();
+  const { companyId } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -150,9 +152,25 @@ export const useSendWhatsAppMessage = () => {
       clientId?: string | null;
       clientName?: string | null;
     }) => {
-      if (!companyId || !user) throw new Error("Sem empresa");
+      if (!companyId) throw new Error("Sem empresa");
 
-      // Insert message
+      // Check if session has Evolution API configured
+      const { data: session } = await (supabase.from("whatsapp_sessions" as any) as any)
+        .select("api_url, api_key, status")
+        .eq("company_id", companyId)
+        .maybeSingle();
+
+      if (session?.api_url && session?.api_key && session?.status === "connected") {
+        // Send via Evolution API
+        return invokeEvolution("send-message", {
+          phone,
+          message_text: messageText,
+          client_id: clientId,
+          client_name: clientName,
+        });
+      }
+
+      // Fallback: save locally (manual mode)
       const { error: msgError } = await (supabase.from("whatsapp_messages" as any) as any)
         .insert({
           company_id: companyId,
@@ -165,7 +183,6 @@ export const useSendWhatsAppMessage = () => {
         });
       if (msgError) throw msgError;
 
-      // Upsert conversation
       const { error: convError } = await (supabase.from("whatsapp_conversations" as any) as any)
         .upsert({
           company_id: companyId,
@@ -185,6 +202,20 @@ export const useSendWhatsAppMessage = () => {
   });
 };
 
+export const useSaveEvolutionConfig = () => {
+  const queryClient = useQueryClient();
+  const { companyId } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ apiUrl, apiKey }: { apiUrl: string; apiKey: string }) => {
+      return invokeEvolution("save-config", { api_url: apiUrl, api_key: apiKey });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-session", companyId] });
+    },
+  });
+};
+
 export const useCreateWhatsAppSession = () => {
   const { companyId } = useAuth();
   const queryClient = useQueryClient();
@@ -192,16 +223,35 @@ export const useCreateWhatsAppSession = () => {
   return useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Sem empresa");
+      return invokeEvolution("create-instance");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-session", companyId] });
+    },
+  });
+};
 
-      // Generate a fake QR code placeholder (will be real when Evolution API is connected)
-      const { error } = await (supabase.from("whatsapp_sessions" as any) as any)
-        .upsert({
-          company_id: companyId,
-          status: "connecting",
-          qr_code: "PLACEHOLDER_QR_CODE",
-          instance_name: `instance_${companyId.slice(0, 8)}`,
-        }, { onConflict: "company_id" });
-      if (error) throw error;
+export const useCheckWhatsAppStatus = () => {
+  const { companyId } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      return invokeEvolution("check-status");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["whatsapp-session", companyId] });
+    },
+  });
+};
+
+export const useRefreshQRCode = () => {
+  const { companyId } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      return invokeEvolution("get-qrcode");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-session", companyId] });
@@ -216,10 +266,7 @@ export const useDisconnectWhatsApp = () => {
   return useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Sem empresa");
-      const { error } = await (supabase.from("whatsapp_sessions" as any) as any)
-        .update({ status: "disconnected", qr_code: null, phone_number: null })
-        .eq("company_id", companyId);
-      if (error) throw error;
+      return invokeEvolution("disconnect");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-session", companyId] });
