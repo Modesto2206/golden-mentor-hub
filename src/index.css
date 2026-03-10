@@ -113,13 +113,13 @@
   content: '';
   position: fixed;
   inset: 0;
-  background: hsl(0 0% 100% / 0.85);
+  background: hsl(var(--background) / 0.9);
   z-index: 0;
   pointer-events: none;
 }
 
 .dark .bg-dashboard::before {
-  background: hsl(0 0% 0% / 0.75);
+  background: hsl(var(--background) / 0.88);
 }
 
 .bg-dashboard > * {
