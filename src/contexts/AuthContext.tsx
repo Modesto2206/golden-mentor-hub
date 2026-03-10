@@ -116,11 +116,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               if (!isMounted) return;
               setRole(role);
               setCompanyId(companyId);
+              setIsLoading(false);
             });
           }, 0);
         } else {
           setRole(null);
           setCompanyId(null);
+          setIsLoading(false);
         }
       }
     );
