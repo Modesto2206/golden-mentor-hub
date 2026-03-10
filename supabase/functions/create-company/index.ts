@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       const zodError = e as z.ZodError;
       const message = zodError.errors?.map((err) => err.message).join(", ") || "Dados inválidos";
-      return jsonResponse({ success: false, error: message }, 400);
+      return jsonResponse({ success: false, error: message });
     }
 
     const {
