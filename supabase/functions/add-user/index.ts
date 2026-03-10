@@ -143,9 +143,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { email, password, role, full_name, phone } = validatedInput;
+    const { email, password, full_name, phone } = validatedInput;
+    let { role } = validatedInput;
     // Always use the caller's company_id - never trust frontend
     const resolvedCompanyId = callerCompanyId;
+
+    // Auto-admin: if company has no users yet, force admin role
+    const { count: companyUserCount } = await supabaseAdmin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", resolvedCompanyId)
+      .eq("is_active", true);
+
+    if ((companyUserCount ?? 0) === 0) {
+      role = "administrador";
+      console.log(`First user of company ${resolvedCompanyId}, forcing role to administrador`);
+    }
+
     console.log(`Creating user: ${email} with role: ${role} for company: ${resolvedCompanyId}`);
 
     // Create new user
