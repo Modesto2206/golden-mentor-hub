@@ -18,23 +18,32 @@ const formatPhone = (phone: string) => {
 };
 
 const WhatsAppButton = () => {
-  const { companyId } = useAuth();
+  const { companyId, user, isAdmin, isSuperAdmin } = useAuth();
   const { currentProfile } = useProfiles();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
+  const isAdminOrSuper = isAdmin || isSuperAdmin;
+
   const { data: clients = [] } = useQuery({
-    queryKey: ["clients-whatsapp", companyId],
+    queryKey: ["clients-whatsapp", companyId, isAdminOrSuper, user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("clients" as any) as any)
-        .select("id, full_name, phone, cpf")
+      let query = (supabase.from("clients" as any) as any)
+        .select("id, full_name, phone, cpf, created_by")
         .eq("company_id", companyId)
         .eq("is_active", true)
         .order("full_name");
+
+      // Vendedores veem apenas seus próprios clientes
+      if (!isAdminOrSuper && user?.id) {
+        query = query.eq("created_by", user.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      return data as { id: string; full_name: string; phone: string | null; cpf: string }[];
+      return data as { id: string; full_name: string; phone: string | null; cpf: string; created_by: string | null }[];
     },
-    enabled: !!companyId && open,
+    enabled: !!companyId && open && !!user,
   });
 
   const filtered = clients.filter((c) => {
