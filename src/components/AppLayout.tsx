@@ -132,6 +132,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           </div>
           <div className="flex items-center gap-3">
             {isAdmin && <AddUserModal />}
+            <WhatsAppButton />
             <ThemeToggle />
             <div className="text-right hidden md:block">
               <p className="text-sm font-medium">{user.user_metadata?.full_name || "Usuário"}</p>
