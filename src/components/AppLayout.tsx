@@ -7,7 +7,7 @@ import { useCompanyStatus } from "@/hooks/useCompanyStatus";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
   LogOut, Shield, User, ChevronLeft, ChevronRight,
-  Landmark, ShoppingBag, Settings, BarChart3, AlertTriangle
+  Landmark, ShoppingBag, Settings, BarChart3, AlertTriangle, MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
