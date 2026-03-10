@@ -246,6 +246,7 @@ const ClientsPage = () => {
             ) : filtered.length === 0 && !isSearchingCPF ? (
               <p className="p-6 text-center text-muted-foreground">Nenhum cliente encontrado</p>
             ) : filtered.length === 0 ? null : (
+              <>
               <Table>
                 <TableHeader>
                   <TableRow>
