@@ -10,7 +10,7 @@ export interface SaleWithProfile extends Sale {
 }
 
 export const useSalesWithProfiles = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, companyId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
