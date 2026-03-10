@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Filter } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2 } from "lucide-react";
+import { useProfiles } from "@/hooks/useProfiles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@
 
 const ClientsPage = () => {
   const { companyId, isAdmin, user } = useAuth();
+  const { currentProfile } = useProfiles();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -159,10 +161,14 @@ const ClientsPage = () => {
     return `${cpf.slice(0, 3)}.***.***-${cpf.slice(-2)}`;
   };
 
-  const getWhatsAppLink = (phone: string) => {
+  const getWhatsAppLink = (phone: string, clientName: string) => {
     const digits = phone?.replace(/\D/g, "");
     if (!digits) return null;
-    return `https://wa.me/55${digits}`;
+    const sellerName = currentProfile?.full_name || "Vendedor";
+    const message = encodeURIComponent(
+      `Olá ${clientName}! Aqui é ${sellerName}, da Cred+. Tudo bem?`
+    );
+    return `https://wa.me/55${digits}?text=${message}`;
   };
 
   return (
@@ -247,7 +253,7 @@ const ClientsPage = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((client: any) => {
-                    const waLink = getWhatsAppLink(client.phone);
+                    const waLink = getWhatsAppLink(client.phone, client.full_name);
                     return (
                       <TableRow key={client.id}>
                         <TableCell className="font-medium">{client.full_name}</TableCell>
