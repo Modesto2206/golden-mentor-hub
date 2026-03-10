@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useCompanyStatus } from "@/hooks/useCompanyStatus";
