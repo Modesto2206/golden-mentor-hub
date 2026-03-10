@@ -16,6 +16,7 @@ import AddUserModal from "@/components/dashboard/AddUserModal";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
+import WhatsAppFAB from "@/components/WhatsAppFAB";
 import logoFull from "@/assets/logo-credmais-full.png";
 import logoLight from "@/assets/logo-credmais-light.png";
 
