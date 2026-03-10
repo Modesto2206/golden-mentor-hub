@@ -123,6 +123,28 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Check if this user is the last admin of their company
+    const { data: targetProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("company_id")
+      .eq("user_id", user_id)
+      .maybeSingle();
+
+    if (targetProfile?.company_id && targetRole?.role === "administrador") {
+      const { count: adminCount } = await supabaseAdmin
+        .from("user_roles")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", targetProfile.company_id)
+        .in("role", ["administrador", "admin_empresa"]);
+
+      if ((adminCount ?? 0) <= 1) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Não é possível remover o último administrador da empresa. Promova outro usuário a administrador antes." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Delete user role
     await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
     console.log(`Roles deleted for user: ${user_id}`);
