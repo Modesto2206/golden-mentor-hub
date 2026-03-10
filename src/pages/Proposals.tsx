@@ -85,12 +85,13 @@ const ProposalsPage = () => {
     queryKey: ["proposals", companyId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("proposals" as any) as any)
-        .select("*, clients(full_name, cpf), banks(name, possui_api)")
+        .select("id, client_id, bank_id, seller_id, modality, requested_value, released_value, internal_status, bank_status, created_at, protocolo_banco, erro_banco, external_proposal_id, clients(full_name, cpf), banks(name, possui_api)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 2,
   });
 
   const updateProposal = useMutation({
