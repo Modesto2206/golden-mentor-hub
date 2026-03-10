@@ -49,13 +49,14 @@ export const useSales = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sales")
-        .select("*")
+        .select("id, seller_id, client_name, covenant_type, operation_type, financial_institution, released_value, commission_percentage, commission_value, sale_date, status, observations, created_at, updated_at")
         .order("sale_date", { ascending: false });
 
       if (error) throw error;
       return data as Sale[];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 
   const createSaleMutation = useMutation({

@@ -32,6 +32,7 @@ export const useCompanySettings = () => {
       return data as CompanySettings | null;
     },
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 5,
   });
 
   const upsertSettings = useMutation({

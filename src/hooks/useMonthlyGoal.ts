@@ -26,17 +26,15 @@ export const useMonthlyGoal = () => {
       return data;
     },
     enabled: !!user && !!companyId,
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Realtime subscription + polling fallback for instant sync across all users
+  // Realtime subscription only (removed aggressive 5s polling)
   useEffect(() => {
     if (!companyId) return;
-    let isActive = true;
-    let pollTimer: ReturnType<typeof setTimeout>;
 
-    // Realtime subscription
     const channel = supabase
-      .channel(`monthly-goals-${companyId}-${Date.now()}`)
+      .channel(`monthly-goals-${companyId}`)
       .on(
         "postgres_changes",
         {
@@ -51,17 +49,7 @@ export const useMonthlyGoal = () => {
       )
       .subscribe();
 
-    // Polling fallback every 5 seconds
-    const poll = () => {
-      if (!isActive) return;
-      queryClient.invalidateQueries({ queryKey: ["monthly-goal", companyId, month, year] });
-      pollTimer = setTimeout(poll, 5000);
-    };
-    pollTimer = setTimeout(poll, 5000);
-
     return () => {
-      isActive = false;
-      clearTimeout(pollTimer);
       supabase.removeChannel(channel);
     };
   }, [companyId, month, year, queryClient]);

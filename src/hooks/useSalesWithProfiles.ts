@@ -47,6 +47,7 @@ export const useSalesWithProfiles = () => {
       return enrichedSales;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Get unique sellers for filter
