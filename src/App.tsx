@@ -48,7 +48,7 @@ const App = () => (
               <Route path="/configuracoes" element={<CompanySettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <AuthenticatedFAB />
+            
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
