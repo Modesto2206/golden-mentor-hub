@@ -4,8 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import WhatsAppFAB from "@/components/WhatsAppFAB";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -22,12 +21,6 @@ import FinancialReport from "./pages/FinancialReport";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 
 const queryClient = new QueryClient();
-
-const AuthenticatedFAB = () => {
-  const { user } = useAuth();
-  if (!user) return null;
-  return <WhatsAppFAB />;
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -53,7 +46,6 @@ const App = () => (
               <Route path="/configuracoes" element={<CompanySettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <AuthenticatedFAB />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

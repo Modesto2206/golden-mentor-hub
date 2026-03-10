@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import WhatsAppFAB from "@/components/WhatsAppFAB";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
@@ -189,6 +190,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           {children}
         </main>
       </div>
+      <WhatsAppFAB />
     </div>
   );
 };
