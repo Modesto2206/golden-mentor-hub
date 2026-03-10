@@ -54,7 +54,7 @@ export const useSalesWithProfiles = () => {
     ? [...new Map(salesQuery.data.map((s) => [s.seller_id, { id: s.seller_id, name: s.seller_name || "Desconhecido" }])).values()]
     : [];
 
-  const { companyId } = useAuth();
+  
 
   const createSaleMutation = useMutation({
     mutationFn: async (saleData: CreateSaleData) => {
