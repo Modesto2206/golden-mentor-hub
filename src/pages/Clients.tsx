@@ -159,6 +159,9 @@ const ClientsPage = () => {
     return true;
   });
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedClients = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   const maskCPF = (cpf: string) => {
     if (!cpf || cpf.length < 11) return cpf;
     return `${cpf.slice(0, 3)}.***.***-${cpf.slice(-2)}`;
