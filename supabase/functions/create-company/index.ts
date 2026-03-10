@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       const zodError = e as z.ZodError;
       const message = zodError.errors?.map((err) => err.message).join(", ") || "Dados inválidos";
-      return jsonResponse({ success: false, error: message }, 400);
+      return jsonResponse({ success: false, error: message });
     }
 
     const {
@@ -119,8 +119,7 @@ Deno.serve(async (req) => {
     if (existingCompany) {
       console.warn("CNPJ duplicado:", cleanCnpj, "Empresa:", existingCompany.name);
       return jsonResponse(
-        { success: false, error: `CNPJ já cadastrado para a empresa: ${existingCompany.name}` },
-        400
+        { success: false, error: `CNPJ já cadastrado para a empresa: ${existingCompany.name}` }
       );
     }
 
@@ -169,7 +168,7 @@ Deno.serve(async (req) => {
         const existingUser = usersData?.users?.find((u: any) => u.email === admin_email);
         if (!existingUser) {
           await supabaseAdmin.from("companies").delete().eq("id", company.id);
-          return jsonResponse({ success: false, error: "Usuário admin não encontrado." }, 400);
+          return jsonResponse({ success: false, error: "Usuário admin não encontrado." });
         }
         adminUserId = existingUser.id;
         console.log("Admin existente vinculado:", adminUserId);
@@ -177,8 +176,7 @@ Deno.serve(async (req) => {
         console.error("Erro ao criar admin:", createError);
         await supabaseAdmin.from("companies").delete().eq("id", company.id);
         return jsonResponse(
-          { success: false, error: `Erro ao criar administrador: ${createError.message}` },
-          400
+          { success: false, error: `Erro ao criar administrador: ${createError.message}` }
         );
       }
     } else if (!newUser?.user) {
