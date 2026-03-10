@@ -1,7 +1,7 @@
 import { Shield, Users, Building2, Briefcase, Wallet, BarChart3 } from "lucide-react";
 import CategoryCard from "@/components/CategoryCard";
 import SellerAreaCard from "@/components/SellerAreaCard";
-import logoFull from "@/assets/logo-credmais-full.png";
+const logoFull = "/images/logo-credmais-full.png";
 
 // Configuração das categorias - Atualize os links conforme necessário
 const categories = [
@@ -53,6 +53,7 @@ const Index = () => {
             <img
               src={logoFull}
               alt="Cred+"
+              fetchPriority="high"
               className="h-24 md:h-32 w-auto object-contain drop-shadow-[0_0_15px_hsl(44_100%_50%/0.3)]"
             />
           </div>
