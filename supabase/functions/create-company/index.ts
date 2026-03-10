@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
         const existingUser = usersData?.users?.find((u: any) => u.email === admin_email);
         if (!existingUser) {
           await supabaseAdmin.from("companies").delete().eq("id", company.id);
-          return jsonResponse({ success: false, error: "Usuário admin não encontrado." }, 400);
+          return jsonResponse({ success: false, error: "Usuário admin não encontrado." });
         }
         adminUserId = existingUser.id;
         console.log("Admin existente vinculado:", adminUserId);
