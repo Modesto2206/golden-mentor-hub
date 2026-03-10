@@ -40,7 +40,7 @@ export interface UpdateSaleData extends Partial<CreateSaleData> {
 }
 
 export const useSales = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, companyId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -60,11 +60,13 @@ export const useSales = () => {
 
   const createSaleMutation = useMutation({
     mutationFn: async (saleData: CreateSaleData) => {
+      if (!companyId) throw new Error("Empresa não identificada.");
       const { data, error } = await supabase
         .from("sales")
         .insert({
           ...saleData,
           seller_id: user!.id,
+          company_id: companyId,
         })
         .select()
         .single();
