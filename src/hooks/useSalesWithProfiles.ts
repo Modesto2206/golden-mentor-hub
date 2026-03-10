@@ -54,13 +54,17 @@ export const useSalesWithProfiles = () => {
     ? [...new Map(salesQuery.data.map((s) => [s.seller_id, { id: s.seller_id, name: s.seller_name || "Desconhecido" }])).values()]
     : [];
 
+  const { companyId } = useAuth();
+
   const createSaleMutation = useMutation({
     mutationFn: async (saleData: CreateSaleData) => {
+      if (!companyId) throw new Error("Empresa não identificada.");
       const { data, error } = await supabase
         .from("sales")
         .insert({
           ...saleData,
           seller_id: user!.id,
+          company_id: companyId,
         })
         .select()
         .single();
