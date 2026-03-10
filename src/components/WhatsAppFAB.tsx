@@ -124,7 +124,7 @@ const WhatsAppFAB = () => {
       <button
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105",
+          "fixed bottom-8 right-8 z-[9999] w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110",
           open
             ? "bg-muted text-muted-foreground"
             : "bg-[#25D366] text-white hover:bg-[#20bd5a]"
