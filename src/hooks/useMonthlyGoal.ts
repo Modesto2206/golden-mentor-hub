@@ -17,7 +17,7 @@ export const useMonthlyGoal = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("monthly_goals")
-        .select("*")
+        .select("id, target_value, month, year")
         .eq("company_id", companyId!)
         .eq("month", month)
         .eq("year", year)
