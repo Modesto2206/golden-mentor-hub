@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Palette, Save, RotateCcw } from "lucide-react";
+import { Upload, Palette, Save, RotateCcw, MessageCircle, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const PRESET_COLORS = [
@@ -240,6 +241,28 @@ const CompanySettings = () => {
             {upsertSettings.isPending ? "Salvando..." : "Salvar Configurações"}
           </Button>
         </div>
+
+        {/* WhatsApp Settings Link */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-[#25D366]" />
+              Integração WhatsApp
+            </CardTitle>
+            <CardDescription>Configure a conexão do WhatsApp para atendimento ao cliente.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/whatsapp/configuracoes">
+              <Button variant="outline" className="gap-2 w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  Acessar Configurações do WhatsApp
+                </span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );

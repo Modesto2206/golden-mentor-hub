@@ -7,7 +7,7 @@ import { useCompanyStatus } from "@/hooks/useCompanyStatus";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
   LogOut, Shield, User, ChevronLeft, ChevronRight,
-  Landmark, ShoppingBag, Settings, BarChart3, AlertTriangle
+  Landmark, ShoppingBag, Settings, BarChart3, AlertTriangle, MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
   { label: "Bancos", icon: <Landmark className="w-5 h-5" />, href: "/bancos" },
   { label: "Relatório", icon: <BarChart3 className="w-5 h-5" />, href: "/relatorio", roles: ["administrador", "raiz", "admin_global", "admin_empresa", "gerente", "financeiro"] },
   { label: "Loja", icon: <ShoppingBag className="w-5 h-5" />, href: "/loja" },
+  { label: "WhatsApp", icon: <MessageCircle className="w-5 h-5" />, href: "/whatsapp" },
   { label: "Super Admin", icon: <Shield className="w-5 h-5" />, href: "/super-admin", roles: ["raiz", "admin_global"] },
   { label: "Configurações", icon: <Settings className="w-5 h-5" />, href: "/configuracoes", roles: ["administrador", "raiz", "admin_global", "admin_empresa"] },
 ];
