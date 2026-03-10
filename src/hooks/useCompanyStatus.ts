@@ -17,6 +17,7 @@ export const useCompanyStatus = () => {
       return data as { status: string; max_users: number; plano: string; name: string };
     },
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 5,
   });
 
   return {

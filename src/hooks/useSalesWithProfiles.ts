@@ -17,10 +17,10 @@ export const useSalesWithProfiles = () => {
   const salesQuery = useQuery({
     queryKey: ["sales-with-profiles", user?.id, isAdmin],
     queryFn: async () => {
-      // Get sales
+      // Get sales - select only needed columns
       const { data: sales, error: salesError } = await supabase
         .from("sales")
-        .select("*")
+        .select("id, seller_id, client_name, covenant_type, operation_type, financial_institution, released_value, commission_percentage, commission_value, sale_date, status, observations, created_at, updated_at, company_id")
         .order("sale_date", { ascending: false });
 
       if (salesError) throw salesError;
@@ -47,6 +47,7 @@ export const useSalesWithProfiles = () => {
       return enrichedSales;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Get unique sellers for filter

@@ -17,7 +17,7 @@ export const useCompanyGoal = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("company_goals")
-        .select("*")
+        .select("id, goal_value, month, year")
         .eq("company_id", companyId!)
         .eq("month", month)
         .eq("year", year)
@@ -27,16 +27,15 @@ export const useCompanyGoal = () => {
       return data;
     },
     enabled: !!user && !!companyId,
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Realtime subscription + polling fallback for instant sync across all users
+  // Realtime subscription only (removed aggressive 5s polling)
   useEffect(() => {
     if (!companyId) return;
-    let isActive = true;
-    let pollTimer: ReturnType<typeof setTimeout>;
 
     const channel = supabase
-      .channel(`company-goals-${companyId}-${Date.now()}`)
+      .channel(`company-goals-${companyId}`)
       .on(
         "postgres_changes",
         {
@@ -51,16 +50,7 @@ export const useCompanyGoal = () => {
       )
       .subscribe();
 
-    const poll = () => {
-      if (!isActive) return;
-      queryClient.invalidateQueries({ queryKey: ["company-goal", companyId, month, year] });
-      pollTimer = setTimeout(poll, 5000);
-    };
-    pollTimer = setTimeout(poll, 5000);
-
     return () => {
-      isActive = false;
-      clearTimeout(pollTimer);
       supabase.removeChannel(channel);
     };
   }, [companyId, month, year, queryClient]);

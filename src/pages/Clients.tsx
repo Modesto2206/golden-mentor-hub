@@ -26,6 +26,8 @@ const ClientsPage = () => {
   const [filterConvenio, setFilterConvenio] = useState<string>("all");
   const [filterModalidade, setFilterModalidade] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
@@ -36,12 +38,13 @@ const ClientsPage = () => {
     queryKey: ["clients", companyId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("clients" as any) as any)
-        .select("*")
+        .select("id, full_name, cpf, phone, birth_date, email, gender, is_active, created_by, convenio, modalidade, address_city, address_state, internal_notes")
         .order("full_name");
       if (error) throw error;
       return data as any[];
     },
     enabled: !!companyId,
+    staleTime: 1000 * 60 * 2,
   });
 
   const createClient = useMutation({
@@ -156,6 +159,9 @@ const ClientsPage = () => {
     return true;
   });
 
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginatedClients = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   const maskCPF = (cpf: string) => {
     if (!cpf || cpf.length < 11) return cpf;
     return `${cpf.slice(0, 3)}.***.***-${cpf.slice(-2)}`;
@@ -240,6 +246,7 @@ const ClientsPage = () => {
             ) : filtered.length === 0 && !isSearchingCPF ? (
               <p className="p-6 text-center text-muted-foreground">Nenhum cliente encontrado</p>
             ) : filtered.length === 0 ? null : (
+              <>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -252,7 +259,7 @@ const ClientsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((client: any) => {
+                  {paginatedClients.map((client: any) => {
                     const waLink = getWhatsAppLink(client.phone, client.full_name);
                     return (
                       <TableRow key={client.id}>
@@ -302,6 +309,22 @@ const ClientsPage = () => {
                   })}
                 </TableBody>
               </Table>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between p-4 border-t border-border/50">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} de {filtered.length}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                      Anterior
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                      Próximo
+                    </Button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
           </CardContent>
         </Card>

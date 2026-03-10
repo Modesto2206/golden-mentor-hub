@@ -35,6 +35,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   });
 
   const { data: roles = [] } = useQuery({
@@ -45,6 +46,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   });
 
   const { data: sales = [] } = useQuery({
@@ -57,6 +59,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Individual goals from `goals` table (has seller_id)
@@ -74,6 +77,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   });
 
   // Fallback default from monthly_goals
@@ -89,6 +93,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   });
 
   const roleMap = new Map(roles.map((r) => [r.user_id, r.role]));

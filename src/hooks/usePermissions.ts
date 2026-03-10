@@ -17,6 +17,7 @@ export const usePermissions = (resource: string) => {
       return data.map((p) => p.action);
     },
     enabled: !!user && !!role,
+    staleTime: 1000 * 60 * 10,
   });
 
   return {
