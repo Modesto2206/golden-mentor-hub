@@ -1,7 +1,7 @@
 import { Shield, Users, Building2, Briefcase, Wallet, BarChart3 } from "lucide-react";
 import CategoryCard from "@/components/CategoryCard";
 import SellerAreaCard from "@/components/SellerAreaCard";
-import logoFull from "@/assets/logo-credmais-full.png";
+const logoFull = "/images/logo-credmais-full.png";
 
 // Configuração das categorias - Atualize os links conforme necessário
 const categories = [
