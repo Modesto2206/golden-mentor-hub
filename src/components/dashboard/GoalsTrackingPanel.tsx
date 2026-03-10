@@ -35,6 +35,7 @@ const GoalsTrackingPanel = () => {
       return data ?? [];
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   });
 
   const { data: roles = [] } = useQuery({
