@@ -24,8 +24,8 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 const queryClient = new QueryClient();
 
 const AuthenticatedFAB = () => {
-  const { user } = useAuth();
-  if (!user) return null;
+  const { user, isLoading } = useAuth();
+  if (isLoading || !user) return null;
   return <WhatsAppFAB />;
 };
 
