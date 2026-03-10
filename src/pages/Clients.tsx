@@ -253,7 +253,7 @@ const ClientsPage = () => {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((client: any) => {
-                    const waLink = getWhatsAppLink(client.phone);
+                    const waLink = getWhatsAppLink(client.phone, client.full_name);
                     return (
                       <TableRow key={client.id}>
                         <TableCell className="font-medium">{client.full_name}</TableCell>
