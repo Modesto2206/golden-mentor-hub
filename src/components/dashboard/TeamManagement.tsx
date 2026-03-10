@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, Loader2, Users, Shield, User } from "lucide-react";
+import { Trash2, Loader2, Users, Shield, User, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,24 @@ interface TeamMember {
   role: string;
 }
 
+const SUPER_ADMIN_ROLES = ["raiz", "admin_global"];
+const ADMIN_ROLES = ["administrador", "admin_empresa", "raiz", "admin_global"];
+
+const roleLabels: Record<string, string> = {
+  vendedor: "Vendedor",
+  administrador: "Administrador",
+  raiz: "Super Admin",
+  admin_global: "Admin Global",
+  admin_empresa: "Admin Empresa",
+  gerente: "Gerente",
+  auditor: "Auditor",
+  compliance: "Compliance",
+  financeiro: "Financeiro",
+  operacoes: "Operações",
+};
+
 const TeamManagement = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -27,7 +43,6 @@ const TeamManagement = () => {
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team-members"],
     queryFn: async () => {
-      // Get profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, full_name, email, is_active")
@@ -36,7 +51,6 @@ const TeamManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Get roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
@@ -65,7 +79,7 @@ const TeamManagement = () => {
 
       toast({
         title: "Usuário removido",
-        description: "O vendedor foi removido do sistema.",
+        description: "O usuário foi removido do sistema.",
       });
 
       queryClient.invalidateQueries({ queryKey: ["team-members"] });
@@ -81,6 +95,33 @@ const TeamManagement = () => {
       setRemovingId(null);
       setConfirmId(null);
     }
+  };
+
+  const canRemove = (member: TeamMember) => {
+    const isSelf = member.user_id === user?.id;
+    if (isSelf) return false;
+
+    const targetIsSuperAdmin = SUPER_ADMIN_ROLES.includes(member.role);
+    // Nobody can remove super admins
+    if (targetIsSuperAdmin) return false;
+
+    const targetIsAdmin = ADMIN_ROLES.includes(member.role);
+    // Only super admins can remove admins
+    if (targetIsAdmin && !isSuperAdmin) return false;
+
+    // Super admins can remove anyone (except other super admins)
+    if (isSuperAdmin) return true;
+
+    // Regular admins can remove non-admin users
+    if (!targetIsAdmin) return true;
+
+    return false;
+  };
+
+  const getRoleIcon = (role: string) => {
+    if (SUPER_ADMIN_ROLES.includes(role)) return <Crown className="w-4 h-4 text-primary" />;
+    if (ADMIN_ROLES.includes(role)) return <Shield className="w-4 h-4 text-primary" />;
+    return <User className="w-4 h-4 text-primary" />;
   };
 
   return (
@@ -101,7 +142,6 @@ const TeamManagement = () => {
           ) : (
             <div className="space-y-3">
               {members.map((member) => {
-                const isAdmin = member.role === "administrador";
                 const isSelf = member.user_id === user?.id;
                 return (
                   <div
@@ -110,11 +150,7 @@ const TeamManagement = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        {isAdmin ? (
-                          <Shield className="w-4 h-4 text-primary" />
-                        ) : (
-                          <User className="w-4 h-4 text-primary" />
-                        )}
+                        {getRoleIcon(member.role)}
                       </div>
                       <div>
                         <p className="text-sm font-medium">
@@ -126,9 +162,9 @@ const TeamManagement = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs">
-                        {isAdmin ? "Administrador" : "Vendedor"}
+                        {roleLabels[member.role] || member.role}
                       </Badge>
-                      {!isAdmin && !isSelf && (
+                      {canRemove(member) && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -155,10 +191,10 @@ const TeamManagement = () => {
       <AlertDialog open={!!confirmId} onOpenChange={() => setConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover Vendedor</AlertDialogTitle>
+            <AlertDialogTitle>Remover Usuário</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover este vendedor? Esta ação não pode ser desfeita.
-              As vendas registradas por este vendedor serão mantidas no histórico.
+              Tem certeza que deseja remover este usuário? Esta ação não pode ser desfeita.
+              As vendas e propostas registradas serão mantidas no histórico.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
