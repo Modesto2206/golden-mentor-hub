@@ -1679,6 +1679,8 @@ export type Database = {
       }
       whatsapp_sessions: {
         Row: {
+          api_key: string | null
+          api_url: string | null
           company_id: string
           connected_at: string | null
           created_at: string
@@ -1691,6 +1693,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          api_key?: string | null
+          api_url?: string | null
           company_id: string
           connected_at?: string | null
           created_at?: string
@@ -1703,6 +1707,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          api_key?: string | null
+          api_url?: string | null
           company_id?: string
           connected_at?: string | null
           created_at?: string
