@@ -27,6 +27,7 @@ const WhatsAppFAB = () => {
     queryFn: async () => {
       const { data, error } = await (supabase.from("clients" as any) as any)
         .select("id, full_name, phone, cpf")
+        .eq("company_id", companyId)
         .eq("is_active", true)
         .order("full_name");
       if (error) throw error;
