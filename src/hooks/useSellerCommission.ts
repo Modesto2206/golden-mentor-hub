@@ -41,7 +41,7 @@ export const useSellerCommission = () => {
       if (!data?.success) throw new Error(data?.error || "Erro ao calcular comissão");
       return data.data;
     },
-    enabled: !!user,
+    enabled: !!user && isVendedor,
     refetchInterval: 60000, // Refresh every minute
   });
 
