@@ -241,6 +241,28 @@ const CompanySettings = () => {
             {upsertSettings.isPending ? "Salvando..." : "Salvar Configurações"}
           </Button>
         </div>
+
+        {/* WhatsApp Settings Link */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-[#25D366]" />
+              Integração WhatsApp
+            </CardTitle>
+            <CardDescription>Configure a conexão do WhatsApp para atendimento ao cliente.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/whatsapp/configuracoes">
+              <Button variant="outline" className="gap-2 w-full justify-between">
+                <span className="flex items-center gap-2">
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  Acessar Configurações do WhatsApp
+                </span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
