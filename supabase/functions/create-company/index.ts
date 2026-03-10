@@ -119,8 +119,7 @@ Deno.serve(async (req) => {
     if (existingCompany) {
       console.warn("CNPJ duplicado:", cleanCnpj, "Empresa:", existingCompany.name);
       return jsonResponse(
-        { success: false, error: `CNPJ já cadastrado para a empresa: ${existingCompany.name}` },
-        400
+        { success: false, error: `CNPJ já cadastrado para a empresa: ${existingCompany.name}` }
       );
     }
 
