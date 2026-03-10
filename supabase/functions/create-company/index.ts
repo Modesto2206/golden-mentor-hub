@@ -176,8 +176,7 @@ Deno.serve(async (req) => {
         console.error("Erro ao criar admin:", createError);
         await supabaseAdmin.from("companies").delete().eq("id", company.id);
         return jsonResponse(
-          { success: false, error: `Erro ao criar administrador: ${createError.message}` },
-          400
+          { success: false, error: `Erro ao criar administrador: ${createError.message}` }
         );
       }
     } else if (!newUser?.user) {
