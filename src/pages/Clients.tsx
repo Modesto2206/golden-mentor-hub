@@ -34,6 +34,7 @@ const ClientsPage = () => {
   const [editingClient, setEditingClient] = useState<any>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id, companyId, isSuperAdmin],
