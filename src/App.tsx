@@ -66,8 +66,6 @@ const App = () => (
                 <Route path="/relatorio" element={<FinancialReport />} />
                 <Route path="/super-admin" element={<SuperAdminDashboard />} />
                 <Route path="/configuracoes" element={<CompanySettingsPage />} />
-                <Route path="/whatsapp" element={<WhatsAppChat />} />
-                <Route path="/whatsapp/configuracoes" element={<WhatsAppSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
