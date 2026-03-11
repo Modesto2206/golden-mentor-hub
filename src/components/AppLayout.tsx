@@ -177,23 +177,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 </Link>
               );
             })}
-
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                  )}
-                >
-                  <span className="shrink-0">{item.icon}</span>
-                  <span className={cn("hidden md:inline", collapsed && "md:hidden")}>{item.label}</span>
-                </Link>
-              );
-            })}
           </nav>
         </aside>
 
