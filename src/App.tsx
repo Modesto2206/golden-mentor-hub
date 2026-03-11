@@ -44,6 +44,11 @@ const PageLoader = () => (
   </div>
 );
 
+// Wrapper to add error boundary per route
+const SafeRoute = ({ children }: { children: React.ReactNode }) => (
+  <ErrorBoundary>{children}</ErrorBoundary>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="credmais-theme">
@@ -55,20 +60,20 @@ const App = () => (
             <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/criar-empresa" element={<CreateCompany />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/bancos" element={<BanksPage />} />
-                  <Route path="/clientes" element={<ClientsPage />} />
-                  <Route path="/propostas" element={<ProposalsPage />} />
-                  <Route path="/propostas/nova" element={<NewProposal />} />
-                  <Route path="/loja" element={<StorePage />} />
-                  <Route path="/relatorio" element={<FinancialReport />} />
-                  <Route path="/super-admin" element={<SuperAdminDashboard />} />
-                  <Route path="/configuracoes" element={<CompanySettingsPage />} />
-                  <Route path="*" element={<NotFound />} />
+                  <Route path="/" element={<SafeRoute><Index /></SafeRoute>} />
+                  <Route path="/auth" element={<SafeRoute><Auth /></SafeRoute>} />
+                  <Route path="/reset-password" element={<SafeRoute><ResetPassword /></SafeRoute>} />
+                  <Route path="/criar-empresa" element={<SafeRoute><CreateCompany /></SafeRoute>} />
+                  <Route path="/dashboard" element={<SafeRoute><Dashboard /></SafeRoute>} />
+                  <Route path="/bancos" element={<SafeRoute><BanksPage /></SafeRoute>} />
+                  <Route path="/clientes" element={<SafeRoute><ClientsPage /></SafeRoute>} />
+                  <Route path="/propostas" element={<SafeRoute><ProposalsPage /></SafeRoute>} />
+                  <Route path="/propostas/nova" element={<SafeRoute><NewProposal /></SafeRoute>} />
+                  <Route path="/loja" element={<SafeRoute><StorePage /></SafeRoute>} />
+                  <Route path="/relatorio" element={<SafeRoute><FinancialReport /></SafeRoute>} />
+                  <Route path="/super-admin" element={<SafeRoute><SuperAdminDashboard /></SafeRoute>} />
+                  <Route path="/configuracoes" element={<SafeRoute><CompanySettingsPage /></SafeRoute>} />
+                  <Route path="*" element={<SafeRoute><NotFound /></SafeRoute>} />
                 </Routes>
               </Suspense>
             </ErrorBoundary>

@@ -22,6 +22,7 @@ export interface Sale {
   observations: string | null;
   created_at: string;
   updated_at: string;
+  company_id: string;
 }
 
 export interface CreateSaleData {

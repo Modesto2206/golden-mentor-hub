@@ -39,6 +39,7 @@ const ClientsPage = () => {
     queryFn: async () => {
       const { data, error } = await (supabase.from("clients" as any) as any)
         .select("id, full_name, cpf, phone, birth_date, email, gender, is_active, created_by, convenio, modalidade, address_city, address_state, internal_notes")
+        .eq("company_id", companyId)
         .order("full_name");
       if (error) throw error;
       return data as any[];

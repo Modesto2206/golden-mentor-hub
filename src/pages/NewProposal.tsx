@@ -73,7 +73,7 @@ const NewProposal = () => {
   const { data: clients = [] } = useQuery({
     queryKey: ["clients", companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("clients" as any) as any).select("*").order("full_name");
+      const { data, error } = await (supabase.from("clients" as any) as any).select("*").eq("company_id", companyId).order("full_name");
       if (error) throw error;
       return data as any[];
     },
@@ -83,7 +83,7 @@ const NewProposal = () => {
   const { data: banks = [] } = useQuery({
     queryKey: ["banks", companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("banks" as any) as any).select("*, products(*)").eq("is_active", true).order("name");
+      const { data, error } = await (supabase.from("banks" as any) as any).select("*, products(*)").eq("company_id", companyId).eq("is_active", true).order("name");
       if (error) throw error;
       return data as any[];
     },
