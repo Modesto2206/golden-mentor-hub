@@ -40,7 +40,7 @@ const WhatsAppFAB = () => {
   const [clients, setClients] = useState<ClientContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const { user, companyId, isLoading: isAuthLoading } = useAuth();
+  const { user, companyId, isLoading: isAuthLoading, isVendedor } = useAuth();
 
   // Drag state
   const savedPos = getSavedPosition();
