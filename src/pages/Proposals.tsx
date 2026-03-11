@@ -31,25 +31,29 @@ import AppLayout from "@/components/AppLayout";
 const internalStatusLabels: Record<string, string> = {
   rascunho: "Rascunho",
   pre_cadastrada: "Pré-Cadastrada",
+  cadastrada: "Cadastrada",
+  enviada_analise: "Enviada p/ Análise",
   em_analise: "Em Análise",
-  pendente_formalizacao: "Pendente",
+  pendente_formalizacao: "Pend. Formalização",
+  pendente_assinatura: "Pend. Assinatura",
   aprovada: "Aprovada",
   reprovada: "Reprovada",
   cancelada: "Cancelada",
-  formalizada: "Formalizada",
-  paga: "Paga",
+  paga_liberada: "Paga / Liberada",
 };
 
 const internalStatusOptions = [
   { value: "rascunho", label: "Rascunho" },
   { value: "pre_cadastrada", label: "Pré-Cadastrada" },
+  { value: "cadastrada", label: "Cadastrada" },
+  { value: "enviada_analise", label: "Enviada p/ Análise" },
   { value: "em_analise", label: "Em Análise" },
-  { value: "pendente_formalizacao", label: "Pendente" },
+  { value: "pendente_formalizacao", label: "Pend. Formalização" },
+  { value: "pendente_assinatura", label: "Pend. Assinatura" },
   { value: "aprovada", label: "Aprovada" },
   { value: "reprovada", label: "Reprovada" },
   { value: "cancelada", label: "Cancelada" },
-  { value: "formalizada", label: "Formalizada" },
-  { value: "paga", label: "Paga" },
+  { value: "paga_liberada", label: "Paga / Liberada" },
 ];
 
 const bankStatusLabels: Record<string, string> = {
@@ -66,13 +70,15 @@ const bankStatusLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   rascunho: "bg-muted text-muted-foreground",
   pre_cadastrada: "bg-blue-500/10 text-blue-500",
+  cadastrada: "bg-blue-600/10 text-blue-600",
+  enviada_analise: "bg-indigo-500/10 text-indigo-500",
   em_analise: "bg-amber-600/10 text-amber-600",
   pendente_formalizacao: "bg-orange-500/10 text-orange-500",
+  pendente_assinatura: "bg-yellow-500/10 text-yellow-600",
   aprovada: "bg-green-500/10 text-green-500",
   reprovada: "bg-red-500/10 text-red-500",
   cancelada: "bg-red-500/10 text-red-500",
-  formalizada: "bg-emerald-500/10 text-emerald-500",
-  paga: "bg-green-600/10 text-green-600",
+  paga_liberada: "bg-emerald-500/10 text-emerald-500",
 };
 
 const modalityLabels: Record<string, string> = {

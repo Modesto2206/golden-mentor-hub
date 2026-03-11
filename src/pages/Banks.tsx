@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  Search, Landmark, Plus, Grid3X3, List, SlidersHorizontal,
-  Edit, Trash2, ToggleLeft, ToggleRight
+  Search, Landmark, Plus, Grid3X3, List, SlidersHorizontal
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
