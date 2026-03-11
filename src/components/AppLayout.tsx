@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddUserModal from "@/components/dashboard/AddUserModal";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import WhatsAppFAB from "@/components/WhatsAppFAB";
+import { cn } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
