@@ -96,7 +96,7 @@ const WhatsAppFAB = () => {
 
     loadClients();
     return () => { cancelled = true; };
-  }, [isOpen, user, companyId, isAuthLoading]);
+  }, [isOpen, user, companyId, isAuthLoading, isVendedor]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
