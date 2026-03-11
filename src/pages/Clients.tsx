@@ -287,6 +287,9 @@ const ClientsPage = () => {
                             <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={() => handleEdit(client)} title="Editar">
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={() => setAttachClient({ id: client.id, name: client.full_name })} title="Anexos">
+                              <Paperclip className="w-4 h-4" />
+                            </Button>
                             {waLink && (
                               <Button variant="ghost" size="sm" asChild className="text-green-500 hover:text-green-600 p-1 h-auto">
                                 <a href={waLink} target="_blank" rel="noopener noreferrer" title="WhatsApp">
