@@ -73,7 +73,7 @@ const NewProposal = () => {
   const { data: clients = [] } = useQuery({
     queryKey: ["clients", companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("clients" as any) as any).select("*").order("full_name");
+      const { data, error } = await (supabase.from("clients" as any) as any).select("*").eq("company_id", companyId).order("full_name");
       if (error) throw error;
       return data as any[];
     },
