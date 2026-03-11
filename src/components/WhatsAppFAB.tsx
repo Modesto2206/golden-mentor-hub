@@ -40,7 +40,7 @@ const WhatsAppFAB = () => {
   const [clients, setClients] = useState<ClientContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const { user, companyId, isLoading: isAuthLoading } = useAuth();
+  const { user, companyId, isLoading: isAuthLoading, isVendedor } = useAuth();
 
   // Drag state
   const savedPos = getSavedPosition();
@@ -74,6 +74,11 @@ const WhatsAppFAB = () => {
           query = query.eq("company_id", companyId);
         }
 
+        // Vendedores veem apenas seus próprios clientes
+        if (isVendedor && user) {
+          query = query.eq("created_by", user.id);
+        }
+
         const { data, error } = await query;
         if (cancelled) return;
         if (error) {
@@ -91,7 +96,7 @@ const WhatsAppFAB = () => {
 
     loadClients();
     return () => { cancelled = true; };
-  }, [isOpen, user, companyId, isAuthLoading]);
+  }, [isOpen, user, companyId, isAuthLoading, isVendedor]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
