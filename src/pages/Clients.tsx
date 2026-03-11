@@ -18,7 +18,7 @@ import AppLayout from "@/components/AppLayout";
 import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@/components/clients/ClientFormDialog";
 
 const ClientsPage = () => {
-  const { companyId, isAdmin, user } = useAuth();
+  const { companyId, isAdmin, isSuperAdmin, user, isLoading: isAuthLoading } = useAuth();
   const { currentProfile } = useProfiles();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -35,16 +35,21 @@ const ClientsPage = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["clients", companyId],
+    queryKey: ["clients", user?.id, companyId, isSuperAdmin],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("clients" as any) as any)
+      let query = (supabase.from("clients" as any) as any)
         .select("id, full_name, cpf, phone, birth_date, email, gender, is_active, created_by, convenio, modalidade, address_city, address_state, internal_notes")
-        .eq("company_id", companyId)
         .order("full_name");
+
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as any[];
     },
-    enabled: !!companyId,
+    enabled: !!user && !isAuthLoading,
     staleTime: 1000 * 60 * 2,
   });
 
