@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { MessageCircle, X, Search, ExternalLink } from "lucide-react";
+import { MessageCircle, X, Search, ExternalLink, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,6 @@ interface ClientContact {
   phone: string;
 }
 
-const DEFAULT_MESSAGE = "Olá, aqui é da nossa equipe. Estamos entrando em contato sobre seu atendimento.";
 const FAB_SIZE = 48;
 const STORAGE_KEY = "whatsapp-fab-position";
 
@@ -40,7 +39,11 @@ const WhatsAppFAB = () => {
   const [clients, setClients] = useState<ClientContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const { user, companyId, isLoading: isAuthLoading, isVendedor } = useAuth();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const userName = user?.user_metadata?.full_name || "consultor";
 
   // Drag state
   const savedPos = getSavedPosition();
@@ -74,7 +77,6 @@ const WhatsAppFAB = () => {
           query = query.eq("company_id", companyId);
         }
 
-        // Vendedores veem apenas seus próprios clientes
         if (isVendedor && user) {
           query = query.eq("created_by", user.id);
         }
@@ -106,11 +108,34 @@ const WhatsAppFAB = () => {
     );
   }, [clients, search]);
 
-  const openWhatsApp = (phone: string) => {
+  const openWhatsApp = (clientName: string, phone: string) => {
     const number = formatPhone(phone);
-    const encoded = encodeURIComponent(DEFAULT_MESSAGE);
-    window.open(`https://wa.me/${number}?text=${encoded}`, "_blank");
+    const message = `Olá ${clientName}, sou o consultor ${userName} da Cred+ Consignado, Tudo bem?`;
+    window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
   };
+
+  // Scroll indicator logic
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const viewport = el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    if (!viewport) return;
+    setShowScrollDown(viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 40);
+  }, []);
+
+  const scrollDown = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const viewport = el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    if (!viewport) return;
+    viewport.scrollBy({ top: 200, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(checkScroll, 150);
+    return () => clearTimeout(timer);
+  }, [isOpen, filtered, checkScroll]);
 
   // Drag handlers
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -125,18 +150,16 @@ const WhatsAppFAB = () => {
     if (!isDragging.current) return;
     const dx = e.clientX - dragStart.current.x;
     const dy = e.clientY - dragStart.current.y;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      hasMoved.current = true;
-    }
-    const newX = clamp(dragStart.current.posX + dx, 0, window.innerWidth - FAB_SIZE);
-    const newY = clamp(dragStart.current.posY + dy, 0, window.innerHeight - FAB_SIZE);
-    setPosition({ x: newX, y: newY });
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved.current = true;
+    setPosition({
+      x: clamp(dragStart.current.posX + dx, 0, window.innerWidth - FAB_SIZE),
+      y: clamp(dragStart.current.posY + dy, 0, window.innerHeight - FAB_SIZE),
+    });
   }, []);
 
   const onPointerUp = useCallback(() => {
     if (isDragging.current) {
       isDragging.current = false;
-      // Save position
       setPosition((pos) => {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pos)); } catch {}
         return pos;
@@ -151,7 +174,6 @@ const WhatsAppFAB = () => {
     }
   }, []);
 
-  // Keep within viewport on resize
   useEffect(() => {
     const handleResize = () => {
       setPosition((pos) => ({
@@ -165,13 +187,11 @@ const WhatsAppFAB = () => {
 
   if (!user) return null;
 
-  // Calculate popup position based on FAB position
   const popupBelow = position.y < 440;
   const popupLeft = position.x < window.innerWidth / 2;
 
   return (
     <>
-      {/* Popup */}
       {isOpen && (
         <div
           className="fixed z-[9998] w-80 max-h-[420px] rounded-xl border border-border bg-card shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200"
@@ -192,38 +212,48 @@ const WhatsAppFAB = () => {
               autoFocus
             />
           </div>
-          <ScrollArea className="flex-1 max-h-[340px]">
-            {loading ? (
-              <div className="p-6 text-center text-sm text-muted-foreground">Carregando...</div>
-            ) : filtered.length === 0 ? (
-              <div className="p-6 text-center text-sm text-muted-foreground">
-                {search ? "Nenhum cliente encontrado" : "Nenhum cliente com telefone"}
-              </div>
-            ) : (
-              <div className="py-1">
-                {filtered.map((client) => (
-                  <button
-                    key={client.id}
-                    onClick={() => openWhatsApp(client.phone)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/60 transition-colors text-left"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
-                      <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{client.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{client.phone}</p>
-                    </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  </button>
-                ))}
-              </div>
+          <div className="relative flex-1">
+            <ScrollArea ref={scrollRef} className="max-h-[340px]" onScrollCapture={checkScroll}>
+              {loading ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">Carregando...</div>
+              ) : filtered.length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">
+                  {search ? "Nenhum cliente encontrado" : "Nenhum cliente com telefone"}
+                </div>
+              ) : (
+                <div className="py-1">
+                  {filtered.map((client) => (
+                    <button
+                      key={client.id}
+                      onClick={() => openWhatsApp(client.full_name, client.phone)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/60 transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0">
+                        <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{client.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{client.phone}</p>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+            {showScrollDown && (
+              <button
+                onClick={scrollDown}
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity animate-bounce"
+                title="Rolar para baixo"
+              >
+                <ChevronDown className="w-4 h-4" />
+              </button>
             )}
-          </ScrollArea>
+          </div>
         </div>
       )}
 
-      {/* Draggable FAB */}
       <button
         ref={fabRef}
         onPointerDown={onPointerDown}
