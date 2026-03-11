@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Paperclip } from "lucide-react";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import AppLayout from "@/components/AppLayout";
 import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@/components/clients/ClientFormDialog";
+import ClientAttachmentsDialog from "@/components/clients/ClientAttachmentsDialog";
 
 const ClientsPage = () => {
   const { companyId, isAdmin, isSuperAdmin, user, isLoading: isAuthLoading } = useAuth();
@@ -33,6 +34,7 @@ const ClientsPage = () => {
   const [editingClient, setEditingClient] = useState<any>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id, companyId, isSuperAdmin],
@@ -285,6 +287,9 @@ const ClientsPage = () => {
                             <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={() => handleEdit(client)} title="Editar">
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            <Button variant="ghost" size="sm" className="p-1 h-auto" onClick={() => setAttachClient({ id: client.id, name: client.full_name })} title="Anexos">
+                              <Paperclip className="w-4 h-4" />
+                            </Button>
                             {waLink && (
                               <Button variant="ghost" size="sm" asChild className="text-green-500 hover:text-green-600 p-1 h-auto">
                                 <a href={waLink} target="_blank" rel="noopener noreferrer" title="WhatsApp">
@@ -380,6 +385,14 @@ const ClientsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {attachClient && (
+        <ClientAttachmentsDialog
+          open={!!attachClient}
+          onOpenChange={(open) => { if (!open) setAttachClient(null); }}
+          clientId={attachClient.id}
+          clientName={attachClient.name}
+        />
+      )}
     </AppLayout>
   );
 };
