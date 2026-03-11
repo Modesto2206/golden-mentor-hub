@@ -26,28 +26,54 @@ const WhatsAppFAB = () => {
   const [clients, setClients] = useState<ClientContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const { user } = useAuth();
+  const { user, companyId, isLoading: isAuthLoading } = useAuth();
 
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!isOpen || !user || isAuthLoading) return;
     let cancelled = false;
     setLoading(true);
-    supabase
-      .from("clients")
-      .select("id, full_name, phone")
-      .not("phone", "is", null)
-      .neq("phone", "")
-      .eq("is_active", true)
-      .order("full_name")
-      .limit(200)
-      .then(({ data }) => {
-        if (!cancelled) {
+
+    const loadClients = async () => {
+      try {
+        let query = supabase
+          .from("clients")
+          .select("id, full_name, phone")
+          .not("phone", "is", null)
+          .neq("phone", "")
+          .eq("is_active", true)
+          .order("full_name")
+          .limit(200);
+
+        if (companyId) {
+          query = query.eq("company_id", companyId);
+        }
+
+        const { data, error } = await query;
+
+        if (cancelled) return;
+        if (error) {
+          console.error("Erro ao buscar clientes do WhatsApp FAB:", error);
+          setClients([]);
+        } else {
           setClients((data as ClientContact[]) || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setClients([]);
+        }
+      } finally {
+        if (!cancelled) {
           setLoading(false);
         }
-      });
-    return () => { cancelled = true; };
-  }, [isOpen, user]);
+      }
+    };
+
+    loadClients();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, user, companyId, isAuthLoading]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
