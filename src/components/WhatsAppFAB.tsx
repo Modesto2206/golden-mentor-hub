@@ -115,27 +115,41 @@ const WhatsAppFAB = () => {
   };
 
   // Scroll indicator logic
-  const checkScroll = useCallback(() => {
+  const getViewport = useCallback(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const viewport = el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
-    if (!viewport) return;
-    setShowScrollDown(viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 40);
+    if (!el) return null;
+    return el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
   }, []);
 
+  const checkScroll = useCallback(() => {
+    const viewport = getViewport();
+    if (!viewport) return;
+    setShowScrollDown(viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 40);
+  }, [getViewport]);
+
   const scrollDown = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const viewport = el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
+    const viewport = getViewport();
     if (!viewport) return;
     viewport.scrollBy({ top: 200, behavior: "smooth" });
-  }, []);
+  }, [getViewport]);
 
   useEffect(() => {
     if (!isOpen) return;
-    const timer = setTimeout(checkScroll, 150);
-    return () => clearTimeout(timer);
-  }, [isOpen, filtered, checkScroll]);
+    const timer = setTimeout(() => {
+      checkScroll();
+      const viewport = getViewport();
+      if (viewport) {
+        viewport.addEventListener("scroll", checkScroll);
+      }
+    }, 200);
+    return () => {
+      clearTimeout(timer);
+      const viewport = getViewport();
+      if (viewport) {
+        viewport.removeEventListener("scroll", checkScroll);
+      }
+    };
+  }, [isOpen, filtered, checkScroll, getViewport]);
 
   // Drag handlers
   const onPointerDown = useCallback((e: React.PointerEvent) => {
