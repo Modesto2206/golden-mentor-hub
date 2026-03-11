@@ -158,8 +158,26 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         )}>
           <nav className="flex-1 p-2 pt-4 space-y-1">
             {filteredNav.map((item) => {
-              const isActive = location.pathname === item.href || 
-                (item.href !== "/dashboard" && location.pathname.startsWith(item.href.split("?")[0]));
+              const isWhatsApp = item.href === "#whatsapp";
+              const isActive = !isWhatsApp && (location.pathname === item.href || 
+                (item.href !== "/dashboard" && location.pathname.startsWith(item.href.split("?")[0])));
+              
+              if (isWhatsApp) {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => openWhatsApp()}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors w-full",
+                      "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                    )}
+                  >
+                    <span className="shrink-0">{item.icon}</span>
+                    <span className={cn("hidden md:inline", collapsed && "md:hidden")}>{item.label}</span>
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
