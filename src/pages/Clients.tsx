@@ -158,7 +158,7 @@ const ClientsPage = () => {
   const isSearchingCPF = searchDigits.length > 0;
 
   const filtered = clients.filter((c: any) => {
-    if (isSearchingCPF && c.cpf !== searchDigits) return false;
+    if (isSearchingCPF && !c.cpf?.includes(searchDigits)) return false;
     if (!isSearchingCPF && search && !c.full_name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterConvenio !== "all" && c.convenio !== filterConvenio) return false;
     if (filterModalidade !== "all" && c.modalidade !== filterModalidade) return false;
