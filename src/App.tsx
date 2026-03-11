@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import WhatsAppFAB from "@/components/WhatsAppFAB";
 import { lazy, Suspense } from "react";
 
 // Lazy load all pages
