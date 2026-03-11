@@ -110,6 +110,7 @@ const ProposalsPage = () => {
     queryFn: async () => {
       const { data, error } = await (supabase.from("proposals" as any) as any)
         .select("id, client_id, bank_id, seller_id, modality, requested_value, released_value, internal_status, bank_status, created_at, protocolo_banco, erro_banco, external_proposal_id, clients(full_name, cpf), banks(name, possui_api)")
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
