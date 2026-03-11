@@ -22,8 +22,6 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CreateCompany = lazy(() => import("./pages/CreateCompany"));
 const FinancialReport = lazy(() => import("./pages/FinancialReport"));
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
-const WhatsAppChat = lazy(() => import("./pages/WhatsAppChat"));
-const WhatsAppSettings = lazy(() => import("./pages/WhatsAppSettings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
