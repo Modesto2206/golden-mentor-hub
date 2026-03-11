@@ -6,24 +6,36 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  error: Error | null;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("ErrorBoundary caught:", error);
+    console.error("Component stack:", errorInfo.componentStack);
+    
+    // Handle chunk loading errors specifically
+    if (
+      error.message?.includes("Failed to fetch dynamically imported module") ||
+      error.message?.includes("Loading chunk") ||
+      error.message?.includes("Loading CSS chunk") ||
+      error.name === "ChunkLoadError"
+    ) {
+      console.warn("Chunk load error detected, will offer reload");
+    }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false });
+    this.setState({ hasError: false, error: null });
   };
 
   handleReload = () => {
@@ -32,12 +44,21 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const isChunkError =
+        this.state.error?.message?.includes("Failed to fetch dynamically imported module") ||
+        this.state.error?.message?.includes("Loading chunk") ||
+        this.state.error?.message?.includes("Loading CSS chunk");
+
       return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="text-center space-y-4 max-w-md">
-            <h2 className="text-xl font-bold text-foreground">Algo deu errado</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              {isChunkError ? "Erro ao carregar a página" : "Algo deu errado"}
+            </h2>
             <p className="text-muted-foreground text-sm">
-              Ocorreu um erro ao carregar a página. Tente novamente.
+              {isChunkError
+                ? "Houve um problema de conexão ao carregar esta página. Tente recarregar."
+                : "Ocorreu um erro inesperado. Tente novamente ou recarregue a página."}
             </p>
             <div className="flex gap-3 justify-center">
               <button
