@@ -65,6 +65,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { resolvedTheme } = useTheme();
   const { settings: companySettings } = useCompanySettings();
   const { isSuspended, isCanceled, isReadOnly } = useCompanyStatus();
+  const { openPopup: openWhatsApp } = useWhatsAppPopup();
   const [collapsed, setCollapsed] = useState(false);
 
   const hasCustomLogo = !!companySettings?.logo_url;
