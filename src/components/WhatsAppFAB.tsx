@@ -74,6 +74,11 @@ const WhatsAppFAB = () => {
           query = query.eq("company_id", companyId);
         }
 
+        // Vendedores veem apenas seus próprios clientes
+        if (isVendedor && user) {
+          query = query.eq("created_by", user.id);
+        }
+
         const { data, error } = await query;
         if (cancelled) return;
         if (error) {
