@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useCompanyStatus } from "@/hooks/useCompanyStatus";
+import { useWhatsAppPopup } from "@/hooks/useWhatsAppPopup";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
   LogOut, Shield, User, ChevronLeft, ChevronRight,
