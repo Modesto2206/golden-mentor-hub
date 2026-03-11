@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, Palette, Save, RotateCcw, MessageCircle, ChevronRight } from "lucide-react";
+import { Upload, Palette, Save, RotateCcw, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const PRESET_COLORS = [
