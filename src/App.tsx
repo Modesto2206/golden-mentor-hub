@@ -23,6 +23,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CreateCompany = lazy(() => import("./pages/CreateCompany"));
 const FinancialReport = lazy(() => import("./pages/FinancialReport"));
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
+const WhatsAppPanel = lazy(() => import("./pages/WhatsAppPanel"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +74,7 @@ const App = () => (
                   <Route path="/relatorio" element={<SafeRoute><FinancialReport /></SafeRoute>} />
                   <Route path="/super-admin" element={<SafeRoute><SuperAdminDashboard /></SafeRoute>} />
                   <Route path="/configuracoes" element={<SafeRoute><CompanySettingsPage /></SafeRoute>} />
+                  <Route path="/whatsapp" element={<SafeRoute><WhatsAppPanel /></SafeRoute>} />
                   <Route path="*" element={<SafeRoute><NotFound /></SafeRoute>} />
                 </Routes>
               </Suspense>
