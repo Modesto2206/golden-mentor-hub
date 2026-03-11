@@ -16,7 +16,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import AddUserModal from "@/components/dashboard/AddUserModal";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { cn } from "@/lib/utils";
-import { cn } from "@/lib/utils";
 import { useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import logoFull from "@/assets/logo-credmais-full.png";
