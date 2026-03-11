@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useCompanyStatus } from "@/hooks/useCompanyStatus";
+import { useWhatsAppPopup } from "@/hooks/useWhatsAppPopup";
 import { 
   LayoutDashboard, Building2, Users, FileText, PlusCircle, 
   LogOut, Shield, User, ChevronLeft, ChevronRight,
@@ -35,7 +36,7 @@ const navItems: NavItem[] = [
   { label: "Bancos", icon: <Landmark className="w-5 h-5" />, href: "/bancos" },
   { label: "Relatório", icon: <BarChart3 className="w-5 h-5" />, href: "/relatorio", roles: ["administrador", "raiz", "admin_global", "admin_empresa", "gerente", "financeiro"] },
   { label: "Loja", icon: <ShoppingBag className="w-5 h-5" />, href: "/loja" },
-  { label: "WhatsApp", icon: <MessageCircle className="w-5 h-5" />, href: "/whatsapp" },
+  { label: "WhatsApp", icon: <MessageCircle className="w-5 h-5" />, href: "#whatsapp" },
   { label: "Super Admin", icon: <Shield className="w-5 h-5" />, href: "/super-admin", roles: ["raiz", "admin_global"] },
   { label: "Configurações", icon: <Settings className="w-5 h-5" />, href: "/configuracoes", roles: ["administrador", "raiz", "admin_global", "admin_empresa"] },
 ];
@@ -64,6 +65,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { resolvedTheme } = useTheme();
   const { settings: companySettings } = useCompanySettings();
   const { isSuspended, isCanceled, isReadOnly } = useCompanyStatus();
+  const { openPopup: openWhatsApp } = useWhatsAppPopup();
   const [collapsed, setCollapsed] = useState(false);
 
   const hasCustomLogo = !!companySettings?.logo_url;
@@ -156,8 +158,26 @@ const AppLayout = ({ children }: AppLayoutProps) => {
         )}>
           <nav className="flex-1 p-2 pt-4 space-y-1">
             {filteredNav.map((item) => {
-              const isActive = location.pathname === item.href || 
-                (item.href !== "/dashboard" && location.pathname.startsWith(item.href.split("?")[0]));
+              const isWhatsApp = item.href === "#whatsapp";
+              const isActive = !isWhatsApp && (location.pathname === item.href || 
+                (item.href !== "/dashboard" && location.pathname.startsWith(item.href.split("?")[0])));
+              
+              if (isWhatsApp) {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => openWhatsApp()}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors w-full",
+                      "text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                    )}
+                  >
+                    <span className="shrink-0">{item.icon}</span>
+                    <span className={cn("hidden md:inline", collapsed && "md:hidden")}>{item.label}</span>
+                  </button>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
