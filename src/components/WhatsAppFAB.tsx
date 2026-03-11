@@ -33,21 +33,23 @@ const WhatsAppFAB = () => {
     let cancelled = false;
     setLoading(true);
 
-    let query = supabase
-      .from("clients")
-      .select("id, full_name, phone")
-      .not("phone", "is", null)
-      .neq("phone", "")
-      .eq("is_active", true)
-      .order("full_name")
-      .limit(200);
+    const loadClients = async () => {
+      try {
+        let query = supabase
+          .from("clients")
+          .select("id, full_name, phone")
+          .not("phone", "is", null)
+          .neq("phone", "")
+          .eq("is_active", true)
+          .order("full_name")
+          .limit(200);
 
-    if (companyId) {
-      query = query.eq("company_id", companyId);
-    }
+        if (companyId) {
+          query = query.eq("company_id", companyId);
+        }
 
-    query
-      .then(({ data, error }) => {
+        const { data, error } = await query;
+
         if (cancelled) return;
         if (error) {
           console.error("Erro ao buscar clientes do WhatsApp FAB:", error);
@@ -55,14 +57,18 @@ const WhatsAppFAB = () => {
         } else {
           setClients((data as ClientContact[]) || []);
         }
-        setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           setClients([]);
+        }
+      } finally {
+        if (!cancelled) {
           setLoading(false);
         }
-      });
+      }
+    };
+
+    loadClients();
 
     return () => {
       cancelled = true;
