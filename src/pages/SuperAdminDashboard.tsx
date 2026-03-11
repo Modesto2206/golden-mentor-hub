@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -98,9 +98,20 @@ const SuperAdminDashboard = () => {
 
   const fmt = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-  if (!authLoading && !isSuperAdmin) {
-    navigate("/dashboard");
-    return null;
+  useEffect(() => {
+    if (!authLoading && !isSuperAdmin) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, isSuperAdmin, navigate]);
+
+  if (authLoading || !isSuperAdmin) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted-foreground">Carregando...</div>
+        </div>
+      </AppLayout>
+    );
   }
 
   return (
