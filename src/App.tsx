@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
 
 // Lazy load all pages
@@ -51,24 +52,26 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/criar-empresa" element={<CreateCompany />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/bancos" element={<BanksPage />} />
-                <Route path="/clientes" element={<ClientsPage />} />
-                <Route path="/propostas" element={<ProposalsPage />} />
-                <Route path="/propostas/nova" element={<NewProposal />} />
-                <Route path="/loja" element={<StorePage />} />
-                <Route path="/relatorio" element={<FinancialReport />} />
-                <Route path="/super-admin" element={<SuperAdminDashboard />} />
-                <Route path="/configuracoes" element={<CompanySettingsPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/criar-empresa" element={<CreateCompany />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/bancos" element={<BanksPage />} />
+                  <Route path="/clientes" element={<ClientsPage />} />
+                  <Route path="/propostas" element={<ProposalsPage />} />
+                  <Route path="/propostas/nova" element={<NewProposal />} />
+                  <Route path="/loja" element={<StorePage />} />
+                  <Route path="/relatorio" element={<FinancialReport />} />
+                  <Route path="/super-admin" element={<SuperAdminDashboard />} />
+                  <Route path="/configuracoes" element={<CompanySettingsPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
