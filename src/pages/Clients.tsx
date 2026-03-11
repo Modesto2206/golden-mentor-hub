@@ -385,6 +385,14 @@ const ClientsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {attachClient && (
+        <ClientAttachmentsDialog
+          open={!!attachClient}
+          onOpenChange={(open) => { if (!open) setAttachClient(null); }}
+          clientId={attachClient.id}
+          clientName={attachClient.name}
+        />
+      )}
     </AppLayout>
   );
 };
