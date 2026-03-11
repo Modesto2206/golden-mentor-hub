@@ -29,15 +29,27 @@ import { Label } from "@/components/ui/label";
 import AppLayout from "@/components/AppLayout";
 
 const internalStatusLabels: Record<string, string> = {
+  rascunho: "Rascunho",
+  pre_cadastrada: "Pré-Cadastrada",
   em_analise: "Em Análise",
   pendente_formalizacao: "Pendente",
-  aprovada: "Aprovado",
+  aprovada: "Aprovada",
+  reprovada: "Reprovada",
+  cancelada: "Cancelada",
+  formalizada: "Formalizada",
+  paga: "Paga",
 };
 
 const internalStatusOptions = [
+  { value: "rascunho", label: "Rascunho" },
+  { value: "pre_cadastrada", label: "Pré-Cadastrada" },
   { value: "em_analise", label: "Em Análise" },
   { value: "pendente_formalizacao", label: "Pendente" },
-  { value: "aprovada", label: "Aprovado" },
+  { value: "aprovada", label: "Aprovada" },
+  { value: "reprovada", label: "Reprovada" },
+  { value: "cancelada", label: "Cancelada" },
+  { value: "formalizada", label: "Formalizada" },
+  { value: "paga", label: "Paga" },
 ];
 
 const bankStatusLabels: Record<string, string> = {
@@ -52,9 +64,15 @@ const bankStatusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
+  rascunho: "bg-muted text-muted-foreground",
+  pre_cadastrada: "bg-blue-500/10 text-blue-500",
   em_analise: "bg-amber-600/10 text-amber-600",
   pendente_formalizacao: "bg-orange-500/10 text-orange-500",
   aprovada: "bg-green-500/10 text-green-500",
+  reprovada: "bg-red-500/10 text-red-500",
+  cancelada: "bg-red-500/10 text-red-500",
+  formalizada: "bg-emerald-500/10 text-emerald-500",
+  paga: "bg-green-600/10 text-green-600",
 };
 
 const modalityLabels: Record<string, string> = {
