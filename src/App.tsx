@@ -44,6 +44,11 @@ const PageLoader = () => (
   </div>
 );
 
+// Wrapper to add error boundary per route
+const SafeRoute = ({ children }: { children: React.ReactNode }) => (
+  <ErrorBoundary>{children}</ErrorBoundary>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem storageKey="credmais-theme">
