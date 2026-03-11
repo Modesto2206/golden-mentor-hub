@@ -242,25 +242,19 @@ const CompanySettings = () => {
           </Button>
         </div>
 
-        {/* WhatsApp Settings Link */}
+        {/* WhatsApp Info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-[#25D366]" />
-              Integração WhatsApp
+              WhatsApp
             </CardTitle>
-            <CardDescription>Configure a conexão do WhatsApp para atendimento ao cliente.</CardDescription>
+            <CardDescription>O WhatsApp Web é acessado diretamente pelo menu lateral ou botão flutuante.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link to="/whatsapp/configuracoes">
-              <Button variant="outline" className="gap-2 w-full justify-between">
-                <span className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                  Acessar Configurações do WhatsApp
-                </span>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            <p className="text-sm text-muted-foreground">
+              Clique em "WhatsApp" no menu lateral para abrir o WhatsApp Web em uma janela popup ao lado da plataforma.
+            </p>
           </CardContent>
         </Card>
       </div>
