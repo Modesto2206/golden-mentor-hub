@@ -81,6 +81,7 @@ const App = () => (
               </Suspense>
             </ErrorBoundary>
           </BrowserRouter>
+          <WhatsAppFAB />
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
