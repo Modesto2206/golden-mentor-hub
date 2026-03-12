@@ -92,7 +92,6 @@ const ClientsPage = () => {
     },
     enabled: !!user && !isAuthLoading,
     staleTime: 1000 * 60 * 2,
-    keepPreviousData: true,
   });
 
   const createClient = useMutation({
