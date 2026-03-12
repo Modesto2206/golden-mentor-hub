@@ -71,37 +71,40 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const hasCustomLogo = !!companySettings?.logo_url;
   const logo = hasCustomLogo ? companySettings.logo_url! : (resolvedTheme === "dark" ? logoFull : logoLight);
 
+  // Memoize HEX to HSL conversion
+  const primaryHSL = useMemo(() => {
+    const hex = companySettings?.primary_color;
+    if (!hex) return null;
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0));
+      else if (max === g) h = ((b - r) / d + 2);
+      else h = ((r - g) / d + 4);
+      h *= 60;
+    }
+    return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  }, [companySettings?.primary_color]);
+
   // Apply custom primary color as CSS variable
   useEffect(() => {
-    if (companySettings?.primary_color) {
-      const hex = companySettings.primary_color;
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      // Convert to HSL
-      const rN = r / 255, gN = g / 255, bN = b / 255;
-      const max = Math.max(rN, gN, bN), min = Math.min(rN, gN, bN);
-      let h = 0, s = 0;
-      const l = (max + min) / 2;
-      if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        if (max === rN) h = ((gN - bN) / d + (gN < bN ? 6 : 0));
-        else if (max === gN) h = ((bN - rN) / d + 2);
-        else h = ((rN - gN) / d + 4);
-        h *= 60;
-      }
-      document.documentElement.style.setProperty("--primary", `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`);
-      document.documentElement.style.setProperty("--accent", `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`);
-      document.documentElement.style.setProperty("--ring", `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`);
+    if (primaryHSL) {
+      document.documentElement.style.setProperty("--primary", primaryHSL);
+      document.documentElement.style.setProperty("--accent", primaryHSL);
+      document.documentElement.style.setProperty("--ring", primaryHSL);
     }
     return () => {
-      // Reset on unmount
       document.documentElement.style.removeProperty("--primary");
       document.documentElement.style.removeProperty("--accent");
       document.documentElement.style.removeProperty("--ring");
     };
-  }, [companySettings?.primary_color]);
+  }, [primaryHSL]);
 
   useEffect(() => {
     if (!isLoading && (!user || !role)) {

@@ -30,8 +30,7 @@ export const useBillingStatus = () => {
       };
     },
     enabled: !!companyId,
-    staleTime: 1000 * 60 * 5,
-    refetchInterval: 5 * 60000, // check every 5 minutes
+    staleTime: 1000 * 60 * 10,
   });
 
   return {

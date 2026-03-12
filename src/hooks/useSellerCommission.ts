@@ -42,8 +42,7 @@ export const useSellerCommission = () => {
       return data.data;
     },
     enabled: !!user && isVendedor,
-    staleTime: 1000 * 60 * 2,
-    refetchInterval: 5 * 60000, // Refresh every 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
   const resetCelebration = useCallback(() => {
