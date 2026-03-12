@@ -38,15 +38,53 @@ const ClientsPage = () => {
   const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["clients", user?.id, companyId, isSuperAdmin],
+    queryKey: ["clients", user?.id, companyId, isSuperAdmin, page, search, filterConvenio, filterModalidade, filterStatus],
     queryFn: async () => {
+      // Count query for total
+      let countQuery = (supabase.from("clients" as any) as any)
+        .select("id", { count: "exact", head: true });
+
+      if (companyId && !isSuperAdmin) {
+        countQuery = countQuery.eq("company_id", companyId);
+      }
+
+      // Apply filters to count
+      const searchDigits = search.replace(/\D/g, "");
+      const isSearchingCPF = searchDigits.length > 0;
+      if (isSearchingCPF) {
+        countQuery = countQuery.ilike("cpf", `%${searchDigits}%`);
+      } else if (search.trim()) {
+        countQuery = countQuery.ilike("full_name", `%${search.trim()}%`);
+      }
+      if (filterConvenio !== "all") countQuery = countQuery.eq("convenio", filterConvenio);
+      if (filterModalidade !== "all") countQuery = countQuery.eq("modalidade", filterModalidade);
+      if (filterStatus === "active") countQuery = countQuery.eq("is_active", true);
+      if (filterStatus === "inactive") countQuery = countQuery.eq("is_active", false);
+
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
+      setTotalCount(count ?? 0);
+
+      // Data query with server-side pagination
       let query = (supabase.from("clients" as any) as any)
         .select("id, full_name, cpf, phone, birth_date, email, gender, is_active, created_by, convenio, modalidade, address_city, address_state, internal_notes")
-        .order("full_name");
+        .order("full_name")
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (companyId && !isSuperAdmin) {
         query = query.eq("company_id", companyId);
       }
+
+      // Apply same filters to data query
+      if (isSearchingCPF) {
+        query = query.ilike("cpf", `%${searchDigits}%`);
+      } else if (search.trim()) {
+        query = query.ilike("full_name", `%${search.trim()}%`);
+      }
+      if (filterConvenio !== "all") query = query.eq("convenio", filterConvenio);
+      if (filterModalidade !== "all") query = query.eq("modalidade", filterModalidade);
+      if (filterStatus === "active") query = query.eq("is_active", true);
+      if (filterStatus === "inactive") query = query.eq("is_active", false);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -54,6 +92,7 @@ const ClientsPage = () => {
     },
     enabled: !!user && !isAuthLoading,
     staleTime: 1000 * 60 * 2,
+    keepPreviousData: true,
   });
 
   const createClient = useMutation({
