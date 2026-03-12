@@ -99,7 +99,7 @@ const Dashboard = () => {
                     visible={widget.visible}
                     onToggleVisibility={() => toggleWidgetVisibility(widget.id)}
                   >
-                    {widgetContentMap[widget.id]}
+                    {getWidgetContent(widget.id)}
                   </SortableWidget>
                 ))}
               </div>
