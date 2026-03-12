@@ -106,6 +106,8 @@ const Index = () => {
             <img
               src={logoFull}
               alt="Cred+ Institucional"
+              width={112}
+              height={112}
               className="h-20 md:h-28 w-auto object-contain flex-shrink-0"
             />
             <div className="text-center md:text-left space-y-2">

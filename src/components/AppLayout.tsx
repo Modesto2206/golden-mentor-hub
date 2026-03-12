@@ -128,7 +128,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Cred+" className="h-[90px] w-auto object-contain" />
+            <img src={logo} alt="Cred+" width={90} height={90} className="h-[90px] w-auto object-contain" />
             <Badge variant="outline" className="border-primary/50 text-primary gap-1 hidden sm:flex">
               {role === "vendedor" ? <User className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
               {roleLabels[role] || role}
