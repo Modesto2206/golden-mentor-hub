@@ -39,12 +39,19 @@ const Dashboard = () => {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   );
 
-  const widgetContentMap: Record<string, ReactNode> = {
-    stats: <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />,
-    companyGoal: <CompanyGoalCard sales={sales} />,
-    charts: <SalesCharts sales={sales} />,
-    ranking: <SalesRanking sales={sales} />,
-    projection: <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />,
+  // Lazy-render: only build widget content if it's visible (or in edit mode)
+  const getWidgetContent = (widgetId: string): ReactNode => {
+    const widget = layout.find((w) => w.id === widgetId);
+    if (!widget?.visible && !isEditMode) return null;
+
+    switch (widgetId) {
+      case "stats": return <DashboardStats sales={sales} monthlyGoal={monthlyGoal} />;
+      case "companyGoal": return <CompanyGoalCard sales={sales} />;
+      case "charts": return <SalesCharts sales={sales} />;
+      case "ranking": return <SalesRanking sales={sales} />;
+      case "projection": return <SalesProjection sales={sales} monthlyGoal={monthlyGoal} />;
+      default: return null;
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
