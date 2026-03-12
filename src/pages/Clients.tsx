@@ -215,7 +215,7 @@ const ClientsPage = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gold-gradient">Clientes</h1>
-            <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
+            <p className="text-sm text-muted-foreground">{totalCount} clientes cadastrados</p>
           </div>
           <Button onClick={() => setAddOpen(true)}>
             <UserPlus className="w-4 h-4 mr-2" />Novo Cliente
