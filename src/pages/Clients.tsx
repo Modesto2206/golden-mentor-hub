@@ -273,7 +273,7 @@ const ClientsPage = () => {
                 <SelectItem value="credito_trabalhador">Crédito Trabalhador</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={handleFilterChange(setFilterStatus)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
