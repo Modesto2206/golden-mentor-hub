@@ -15,21 +15,31 @@ export const useSalesWithProfiles = () => {
   const { toast } = useToast();
 
   const salesQuery = useQuery({
-    queryKey: ["sales-with-profiles", user?.id, isAdmin],
+    queryKey: ["sales-with-profiles", user?.id, isAdmin, companyId],
     queryFn: async () => {
-      // Get sales - select only needed columns
-      const { data: sales, error: salesError } = await supabase
+      // Get sales - select only needed columns, filtered by company
+      let salesQb = supabase
         .from("sales")
         .select("id, seller_id, client_name, covenant_type, operation_type, financial_institution, released_value, commission_percentage, commission_value, sale_date, status, observations, created_at, updated_at, company_id")
         .order("sale_date", { ascending: false });
 
+      if (companyId) {
+        salesQb = salesQb.eq("company_id", companyId);
+      }
+
+      const { data: sales, error: salesError } = await salesQb;
       if (salesError) throw salesError;
 
-      // Get all profiles for mapping
-      const { data: profiles, error: profilesError } = await supabase
+      // Get profiles filtered by company
+      let profilesQb = supabase
         .from("profiles")
         .select("user_id, full_name, email");
 
+      if (companyId) {
+        profilesQb = profilesQb.eq("company_id", companyId);
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQb;
       if (profilesError) throw profilesError;
 
       // Create a map for quick lookup
@@ -46,7 +56,7 @@ export const useSalesWithProfiles = () => {
 
       return enrichedSales;
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 2,
   });
 

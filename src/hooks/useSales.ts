@@ -46,17 +46,22 @@ export const useSales = () => {
   const { toast } = useToast();
 
   const salesQuery = useQuery({
-    queryKey: ["sales", user?.id, isAdmin],
+    queryKey: ["sales", user?.id, isAdmin, companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
-        .select("id, seller_id, client_name, covenant_type, operation_type, financial_institution, released_value, commission_percentage, commission_value, sale_date, status, observations, created_at, updated_at")
+        .select("id, seller_id, client_name, covenant_type, operation_type, financial_institution, released_value, commission_percentage, commission_value, sale_date, status, observations, created_at, updated_at, company_id")
         .order("sale_date", { ascending: false });
 
+      if (companyId) {
+        query = query.eq("company_id", companyId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Sale[];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 2,
   });
 
