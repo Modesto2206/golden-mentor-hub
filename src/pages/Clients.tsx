@@ -259,7 +259,7 @@ const ClientsPage = () => {
                 <SelectItem value="Outros">Outros</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterModalidade} onValueChange={setFilterModalidade}>
+            <Select value={filterModalidade} onValueChange={handleFilterChange(setFilterModalidade)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Modalidade" />
               </SelectTrigger>
