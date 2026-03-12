@@ -192,22 +192,7 @@ const ClientsPage = () => {
     modalidade: client.modalidade || "",
   });
 
-  // Search logic
-  const searchDigits = search.replace(/\D/g, "");
-  const isSearchingCPF = searchDigits.length > 0;
-
-  const filtered = clients.filter((c: any) => {
-    if (isSearchingCPF && !c.cpf?.includes(searchDigits)) return false;
-    if (!isSearchingCPF && search && !c.full_name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterConvenio !== "all" && c.convenio !== filterConvenio) return false;
-    if (filterModalidade !== "all" && c.modalidade !== filterModalidade) return false;
-    if (filterStatus === "active" && !c.is_active) return false;
-    if (filterStatus === "inactive" && c.is_active) return false;
-    return true;
-  });
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedClients = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const maskCPF = (cpf: string) => {
     if (!cpf || cpf.length < 11) return cpf;
