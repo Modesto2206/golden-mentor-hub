@@ -275,9 +275,9 @@ const ClientsPage = () => {
           <CardContent className="p-0">
             {isLoading ? (
               <p className="p-6 text-muted-foreground">Carregando...</p>
-            ) : filtered.length === 0 && !isSearchingCPF ? (
+            ) : clients.length === 0 ? (
               <p className="p-6 text-center text-muted-foreground">Nenhum cliente encontrado</p>
-            ) : filtered.length === 0 ? null : (
+            ) : (
               <>
               <Table>
                 <TableHeader>
