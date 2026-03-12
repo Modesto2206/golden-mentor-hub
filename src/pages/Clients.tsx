@@ -54,7 +54,7 @@ const ClientsPage = () => {
   const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["clients", user?.id, companyId, isSuperAdmin, page, search, filterConvenio, filterModalidade, filterStatus],
+    queryKey: ["clients", user?.id, companyId, isSuperAdmin, page, debouncedSearch, filterConvenio, filterModalidade, filterStatus],
     queryFn: async () => {
       // Count query for total
       let countQuery = (supabase.from("clients" as any) as any)
