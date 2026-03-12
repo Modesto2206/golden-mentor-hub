@@ -245,7 +245,7 @@ const ClientsPage = () => {
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF exato..." className="pl-10" />
           </div>
           <div className="flex flex-wrap gap-3">
-            <Select value={filterConvenio} onValueChange={setFilterConvenio}>
+            <Select value={filterConvenio} onValueChange={handleFilterChange(setFilterConvenio)}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Convênio" />
               </SelectTrigger>
