@@ -24,12 +24,28 @@ const ClientsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterConvenio, setFilterConvenio] = useState<string>("all");
   const [filterModalidade, setFilterModalidade] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
   const [totalCount, setTotalCount] = useState(0);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page on filter changes
+  const handleFilterChange = (setter: (v: string) => void) => (val: string) => {
+    setter(val);
+    setPage(0);
+  };
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
