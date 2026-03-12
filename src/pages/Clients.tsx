@@ -29,6 +29,7 @@ const ClientsPage = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
+  const [totalCount, setTotalCount] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
