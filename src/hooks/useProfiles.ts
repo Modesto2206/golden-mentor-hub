@@ -14,20 +14,25 @@ export interface Profile {
 }
 
 export const useProfiles = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, companyId } = useAuth();
 
   const profilesQuery = useQuery({
-    queryKey: ["profiles", user?.id, isAdmin],
+    queryKey: ["profiles", user?.id, isAdmin, companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("profiles")
-        .select("*")
+        .select("id, user_id, email, full_name, phone, is_active, created_at, updated_at, company_id")
         .order("full_name");
 
+      if (companyId) {
+        query = query.eq("company_id", companyId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Profile[];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const currentProfileQuery = useQuery({

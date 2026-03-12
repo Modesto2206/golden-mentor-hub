@@ -103,46 +103,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let initialSessionHandled = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!isMounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            loadUserData(session.user.id).then(({ role, companyId }) => {
-              if (!isMounted) return;
-              setRole(role);
-              setCompanyId(companyId);
-              setIsLoading(false);
-            });
-          }, 0);
-        } else {
-          setRole(null);
-          setCompanyId(null);
-          setIsLoading(false);
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleSession = async (session: Session | null) => {
       if (!isMounted) return;
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        loadUserData(session.user.id).then(({ role, companyId }) => {
-          if (!isMounted) return;
-          setRole(role);
-          setCompanyId(companyId);
-          setIsLoading(false);
-        });
+        const { role, companyId } = await loadUserData(session.user.id);
+        if (!isMounted) return;
+        setRole(role);
+        setCompanyId(companyId);
       } else {
-        setIsLoading(false);
+        setRole(null);
+        setCompanyId(null);
       }
+      setIsLoading(false);
+    };
+
+    // Get initial session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      initialSessionHandled = true;
+      handleSession(session);
     });
+
+    // Listen for auth changes (sign in, sign out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!isMounted) return;
+        // Skip if this is the initial session (already handled above)
+        if (!initialSessionHandled) return;
+        handleSession(session);
+      }
+    );
 
     return () => {
       isMounted = false;
