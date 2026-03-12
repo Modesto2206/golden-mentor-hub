@@ -65,12 +65,12 @@ const ClientsPage = () => {
       }
 
       // Apply filters to count
-      const searchDigits = search.replace(/\D/g, "");
+      const searchDigits = debouncedSearch.replace(/\D/g, "");
       const isSearchingCPF = searchDigits.length > 0;
       if (isSearchingCPF) {
         countQuery = countQuery.ilike("cpf", `%${searchDigits}%`);
-      } else if (search.trim()) {
-        countQuery = countQuery.ilike("full_name", `%${search.trim()}%`);
+      } else if (debouncedSearch.trim()) {
+        countQuery = countQuery.ilike("full_name", `%${debouncedSearch.trim()}%`);
       }
       if (filterConvenio !== "all") countQuery = countQuery.eq("convenio", filterConvenio);
       if (filterModalidade !== "all") countQuery = countQuery.eq("modalidade", filterModalidade);
