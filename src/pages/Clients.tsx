@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,11 +24,28 @@ const ClientsPage = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterConvenio, setFilterConvenio] = useState<string>("all");
   const [filterModalidade, setFilterModalidade] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page on filter changes
+  const handleFilterChange = (setter: (v: string) => void) => (val: string) => {
+    setter(val);
+    setPage(0);
+  };
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
@@ -37,15 +54,53 @@ const ClientsPage = () => {
   const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
-    queryKey: ["clients", user?.id, companyId, isSuperAdmin],
+    queryKey: ["clients", user?.id, companyId, isSuperAdmin, page, debouncedSearch, filterConvenio, filterModalidade, filterStatus],
     queryFn: async () => {
+      // Count query for total
+      let countQuery = (supabase.from("clients" as any) as any)
+        .select("id", { count: "exact", head: true });
+
+      if (companyId && !isSuperAdmin) {
+        countQuery = countQuery.eq("company_id", companyId);
+      }
+
+      // Apply filters to count
+      const searchDigits = debouncedSearch.replace(/\D/g, "");
+      const isSearchingCPF = searchDigits.length > 0;
+      if (isSearchingCPF) {
+        countQuery = countQuery.ilike("cpf", `%${searchDigits}%`);
+      } else if (debouncedSearch.trim()) {
+        countQuery = countQuery.ilike("full_name", `%${debouncedSearch.trim()}%`);
+      }
+      if (filterConvenio !== "all") countQuery = countQuery.eq("convenio", filterConvenio);
+      if (filterModalidade !== "all") countQuery = countQuery.eq("modalidade", filterModalidade);
+      if (filterStatus === "active") countQuery = countQuery.eq("is_active", true);
+      if (filterStatus === "inactive") countQuery = countQuery.eq("is_active", false);
+
+      const { count, error: countError } = await countQuery;
+      if (countError) throw countError;
+      setTotalCount(count ?? 0);
+
+      // Data query with server-side pagination
       let query = (supabase.from("clients" as any) as any)
         .select("id, full_name, cpf, phone, birth_date, email, gender, is_active, created_by, convenio, modalidade, address_city, address_state, internal_notes")
-        .order("full_name");
+        .order("full_name")
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (companyId && !isSuperAdmin) {
         query = query.eq("company_id", companyId);
       }
+
+      // Apply same filters to data query
+      if (isSearchingCPF) {
+        query = query.ilike("cpf", `%${searchDigits}%`);
+      } else if (debouncedSearch.trim()) {
+        query = query.ilike("full_name", `%${debouncedSearch.trim()}%`);
+      }
+      if (filterConvenio !== "all") query = query.eq("convenio", filterConvenio);
+      if (filterModalidade !== "all") query = query.eq("modalidade", filterModalidade);
+      if (filterStatus === "active") query = query.eq("is_active", true);
+      if (filterStatus === "inactive") query = query.eq("is_active", false);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -153,22 +208,7 @@ const ClientsPage = () => {
     modalidade: client.modalidade || "",
   });
 
-  // Search logic
-  const searchDigits = search.replace(/\D/g, "");
-  const isSearchingCPF = searchDigits.length > 0;
-
-  const filtered = clients.filter((c: any) => {
-    if (isSearchingCPF && !c.cpf?.includes(searchDigits)) return false;
-    if (!isSearchingCPF && search && !c.full_name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filterConvenio !== "all" && c.convenio !== filterConvenio) return false;
-    if (filterModalidade !== "all" && c.modalidade !== filterModalidade) return false;
-    if (filterStatus === "active" && !c.is_active) return false;
-    if (filterStatus === "inactive" && c.is_active) return false;
-    return true;
-  });
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginatedClients = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const maskCPF = (cpf: string) => {
     if (!cpf || cpf.length < 11) return cpf;
@@ -191,7 +231,7 @@ const ClientsPage = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gold-gradient">Clientes</h1>
-            <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
+            <p className="text-sm text-muted-foreground">{totalCount} clientes cadastrados</p>
           </div>
           <Button onClick={() => setAddOpen(true)}>
             <UserPlus className="w-4 h-4 mr-2" />Novo Cliente
@@ -205,7 +245,7 @@ const ClientsPage = () => {
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF exato..." className="pl-10" />
           </div>
           <div className="flex flex-wrap gap-3">
-            <Select value={filterConvenio} onValueChange={setFilterConvenio}>
+            <Select value={filterConvenio} onValueChange={handleFilterChange(setFilterConvenio)}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Convênio" />
               </SelectTrigger>
@@ -219,7 +259,7 @@ const ClientsPage = () => {
                 <SelectItem value="Outros">Outros</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterModalidade} onValueChange={setFilterModalidade}>
+            <Select value={filterModalidade} onValueChange={handleFilterChange(setFilterModalidade)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Modalidade" />
               </SelectTrigger>
@@ -233,7 +273,7 @@ const ClientsPage = () => {
                 <SelectItem value="credito_trabalhador">Crédito Trabalhador</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={handleFilterChange(setFilterStatus)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -251,9 +291,9 @@ const ClientsPage = () => {
           <CardContent className="p-0">
             {isLoading ? (
               <p className="p-6 text-muted-foreground">Carregando...</p>
-            ) : filtered.length === 0 && !isSearchingCPF ? (
+            ) : clients.length === 0 ? (
               <p className="p-6 text-center text-muted-foreground">Nenhum cliente encontrado</p>
-            ) : filtered.length === 0 ? null : (
+            ) : (
               <>
               <Table>
                 <TableHeader>
@@ -267,7 +307,7 @@ const ClientsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedClients.map((client: any) => {
+                  {clients.map((client: any) => {
                     const waLink = getWhatsAppLink(client.phone, client.full_name);
                     return (
                       <TableRow key={client.id}>
@@ -323,7 +363,7 @@ const ClientsPage = () => {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between p-4 border-t border-border/50">
                   <p className="text-sm text-muted-foreground">
-                    Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} de {filtered.length}
+                    Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} de {totalCount}
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
