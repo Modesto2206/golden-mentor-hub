@@ -51,7 +51,8 @@ export const useSales = () => {
       let query = supabase
         .from("sales")
         .select("id, seller_id, client_name, covenant_type, operation_type, financial_institution, released_value, commission_percentage, commission_value, sale_date, status, observations, created_at, updated_at, company_id")
-        .order("sale_date", { ascending: false });
+        .order("sale_date", { ascending: false })
+        .limit(5000);
 
       if (companyId) {
         query = query.eq("company_id", companyId);
