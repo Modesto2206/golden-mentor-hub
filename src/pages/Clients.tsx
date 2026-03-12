@@ -94,8 +94,8 @@ const ClientsPage = () => {
       // Apply same filters to data query
       if (isSearchingCPF) {
         query = query.ilike("cpf", `%${searchDigits}%`);
-      } else if (search.trim()) {
-        query = query.ilike("full_name", `%${search.trim()}%`);
+      } else if (debouncedSearch.trim()) {
+        query = query.ilike("full_name", `%${debouncedSearch.trim()}%`);
       }
       if (filterConvenio !== "all") query = query.eq("convenio", filterConvenio);
       if (filterModalidade !== "all") query = query.eq("modalidade", filterModalidade);
