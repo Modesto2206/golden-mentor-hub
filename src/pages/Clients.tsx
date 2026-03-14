@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Paperclip } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Paperclip, Upload } from "lucide-react";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 import AppLayout from "@/components/AppLayout";
 import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@/components/clients/ClientFormDialog";
 import ClientAttachmentsDialog from "@/components/clients/ClientAttachmentsDialog";
+import ClientImportDialog from "@/components/clients/ClientImportDialog";
 
 const ClientsPage = () => {
   const { companyId, isAdmin, isSuperAdmin, user, isLoading: isAuthLoading } = useAuth();
@@ -52,6 +53,7 @@ const ClientsPage = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id, companyId, isSuperAdmin, page, debouncedSearch, filterConvenio, filterModalidade, filterStatus],
@@ -233,9 +235,14 @@ const ClientsPage = () => {
             <h1 className="text-2xl font-bold text-gold-gradient">Clientes</h1>
             <p className="text-sm text-muted-foreground">{totalCount} clientes cadastrados</p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />Novo Cliente
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />Importar
+            </Button>
+            <Button onClick={() => setAddOpen(true)}>
+              <UserPlus className="w-4 h-4 mr-2" />Novo Cliente
+            </Button>
+          </div>
         </div>
 
         {/* Search & Filters */}
@@ -425,6 +432,7 @@ const ClientsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ClientImportDialog open={importOpen} onOpenChange={setImportOpen} />
       {attachClient && (
         <ClientAttachmentsDialog
           open={!!attachClient}
