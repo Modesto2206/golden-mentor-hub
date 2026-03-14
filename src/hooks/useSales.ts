@@ -54,7 +54,7 @@ export const useSales = () => {
         .order("sale_date", { ascending: false })
         .limit(5000);
 
-      if (companyId) {
+      if (!isSuperAdmin && companyId) {
         query = query.eq("company_id", companyId);
       }
 

@@ -37,7 +37,7 @@ export const useSalesWithProfiles = () => {
         .from("profiles")
         .select("user_id, full_name, email");
 
-      if (companyId) {
+      if (!isSuperAdmin && companyId) {
         profilesQb = profilesQb.eq("company_id", companyId);
       }
 
