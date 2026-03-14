@@ -73,11 +73,11 @@ const WhatsAppFAB = () => {
           .order("full_name")
           .limit(200);
 
-        if (companyId) {
+        if (!isSuperAdmin && companyId) {
           query = query.eq("company_id", companyId);
         }
 
-        if (isVendedor && user) {
+        if (isVendedor && !isSuperAdmin && user) {
           query = query.eq("created_by", user.id);
         }
 
