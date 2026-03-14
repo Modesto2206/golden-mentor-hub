@@ -51,13 +51,17 @@ const FinancialReport = () => {
   });
 
   const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles-report"],
+    queryKey: ["profiles-report", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("user_id, full_name");
+      let query = supabase.from("profiles").select("user_id, full_name");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const { data: prevClients = [] } = useQuery({
