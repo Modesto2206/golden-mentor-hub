@@ -10,7 +10,7 @@ export interface SaleWithProfile extends Sale {
 }
 
 export const useSalesWithProfiles = () => {
-  const { user, isAdmin, companyId } = useAuth();
+  const { user, isAdmin, isSuperAdmin, companyId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -24,7 +24,8 @@ export const useSalesWithProfiles = () => {
         .order("sale_date", { ascending: false })
         .limit(5000);
 
-      if (companyId) {
+      // Super admins see all companies; others filter by own company
+      if (!isSuperAdmin && companyId) {
         salesQb = salesQb.eq("company_id", companyId);
       }
 
@@ -36,7 +37,7 @@ export const useSalesWithProfiles = () => {
         .from("profiles")
         .select("user_id, full_name, email");
 
-      if (companyId) {
+      if (!isSuperAdmin && companyId) {
         profilesQb = profilesQb.eq("company_id", companyId);
       }
 

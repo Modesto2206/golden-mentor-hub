@@ -41,7 +41,7 @@ export interface UpdateSaleData extends Partial<CreateSaleData> {
 }
 
 export const useSales = () => {
-  const { user, isAdmin, companyId } = useAuth();
+  const { user, isAdmin, isSuperAdmin, companyId } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -54,7 +54,7 @@ export const useSales = () => {
         .order("sale_date", { ascending: false })
         .limit(5000);
 
-      if (companyId) {
+      if (!isSuperAdmin && companyId) {
         query = query.eq("company_id", companyId);
       }
 
