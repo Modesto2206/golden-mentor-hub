@@ -115,42 +115,29 @@ const WhatsAppFAB = () => {
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  // Scroll indicator logic
-  const getViewport = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return null;
-    return el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
-  }, []);
+  // Scroll indicator logic - use direct ref to the scrollable div
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const checkScroll = useCallback(() => {
-    const viewport = getViewport();
-    if (!viewport) return;
-    setShowScrollDown(viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 40);
-  }, [getViewport]);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 20);
+    setShowScrollUp(el.scrollTop > 20);
+  }, []);
 
   const scrollDown = useCallback(() => {
-    const viewport = getViewport();
-    if (!viewport) return;
-    viewport.scrollBy({ top: 200, behavior: "smooth" });
-  }, [getViewport]);
+    scrollContainerRef.current?.scrollBy({ top: 150, behavior: "smooth" });
+  }, []);
+
+  const scrollUp = useCallback(() => {
+    scrollContainerRef.current?.scrollBy({ top: -150, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    const timer = setTimeout(() => {
-      checkScroll();
-      const viewport = getViewport();
-      if (viewport) {
-        viewport.addEventListener("scroll", checkScroll);
-      }
-    }, 200);
-    return () => {
-      clearTimeout(timer);
-      const viewport = getViewport();
-      if (viewport) {
-        viewport.removeEventListener("scroll", checkScroll);
-      }
-    };
-  }, [isOpen, filtered, checkScroll, getViewport]);
+    const timer = setTimeout(checkScroll, 200);
+    return () => clearTimeout(timer);
+  }, [isOpen, filtered, checkScroll]);
 
   // Drag handlers
   const onPointerDown = useCallback((e: React.PointerEvent) => {
