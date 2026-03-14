@@ -34,16 +34,20 @@ const FinancialReport = () => {
   });
 
   const { data: currSales = [] } = useQuery({
-    queryKey: ["financial-report-curr", currMonthStart.toISOString()],
+    queryKey: ["financial-report-curr", currMonthStart.toISOString(), companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select("*")
         .gte("sale_date", currMonthStart.toISOString().split("T")[0]);
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const { data: profiles = [] } = useQuery({
