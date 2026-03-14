@@ -65,16 +65,20 @@ const FinancialReport = () => {
   });
 
   const { data: prevClients = [] } = useQuery({
-    queryKey: ["clients-prev-month", prevMonth.toISOString()],
+    queryKey: ["clients-prev-month", prevMonth.toISOString(), companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("clients" as any) as any)
+      let query = (supabase.from("clients" as any) as any)
         .select("id")
         .gte("created_at", prevMonth.toISOString())
         .lte("created_at", prevMonthEnd.toISOString());
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const profileMap = useMemo(
