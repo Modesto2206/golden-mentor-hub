@@ -8,7 +8,7 @@ import { DollarSign, TrendingUp, Users, BarChart3, ArrowUpRight, ArrowDownRight 
 import AppLayout from "@/components/AppLayout";
 
 const FinancialReport = () => {
-  const { user } = useAuth();
+  const { user, companyId, isSuperAdmin } = useAuth();
 
   const now = new Date();
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -16,53 +16,69 @@ const FinancialReport = () => {
   const currMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const { data: prevSales = [] } = useQuery({
-    queryKey: ["financial-report-prev", prevMonth.toISOString()],
+    queryKey: ["financial-report-prev", prevMonth.toISOString(), companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select("*")
         .gte("sale_date", prevMonth.toISOString().split("T")[0])
         .lte("sale_date", prevMonthEnd.toISOString().split("T")[0]);
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const { data: currSales = [] } = useQuery({
-    queryKey: ["financial-report-curr", currMonthStart.toISOString()],
+    queryKey: ["financial-report-curr", currMonthStart.toISOString(), companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select("*")
         .gte("sale_date", currMonthStart.toISOString().split("T")[0]);
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles-report"],
+    queryKey: ["profiles-report", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("user_id, full_name");
+      let query = supabase.from("profiles").select("user_id, full_name");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const { data: prevClients = [] } = useQuery({
-    queryKey: ["clients-prev-month", prevMonth.toISOString()],
+    queryKey: ["clients-prev-month", prevMonth.toISOString(), companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("clients" as any) as any)
+      let query = (supabase.from("clients" as any) as any)
         .select("id")
         .gte("created_at", prevMonth.toISOString())
         .lte("created_at", prevMonthEnd.toISOString());
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const profileMap = useMemo(

@@ -30,35 +30,47 @@ const GoalsTrackingPanel = () => {
   const { data: profiles = [] } = useQuery({
     queryKey: ["goals-tracking-profiles", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("user_id, full_name, email, company_id, is_active");
+      let query = supabase.from("profiles").select("user_id, full_name, email, company_id, is_active");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 3,
   });
 
   const { data: roles = [] } = useQuery({
     queryKey: ["goals-tracking-roles", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_roles").select("user_id, role");
+      let query = supabase.from("user_roles").select("user_id, role");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 3,
   });
 
   const { data: sales = [] } = useQuery({
     queryKey: ["goals-tracking-sales", companyId, currentMonth, currentYear],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select("seller_id, released_value, commission_value, status, sale_date");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 2,
   });
 
