@@ -24,7 +24,8 @@ export const useSalesWithProfiles = () => {
         .order("sale_date", { ascending: false })
         .limit(5000);
 
-      if (companyId) {
+      // Super admins see all companies; others filter by own company
+      if (!isSuperAdmin && companyId) {
         salesQb = salesQb.eq("company_id", companyId);
       }
 
