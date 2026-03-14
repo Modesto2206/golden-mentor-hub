@@ -30,11 +30,15 @@ const GoalsTrackingPanel = () => {
   const { data: profiles = [] } = useQuery({
     queryKey: ["goals-tracking-profiles", companyId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("user_id, full_name, email, company_id, is_active");
+      let query = supabase.from("profiles").select("user_id, full_name, email, company_id, is_active");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 3,
   });
 
