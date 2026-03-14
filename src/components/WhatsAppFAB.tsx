@@ -40,7 +40,7 @@ const WhatsAppFAB = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [showScrollDown, setShowScrollDown] = useState(false);
-  const { user, companyId, isLoading: isAuthLoading, isVendedor } = useAuth();
+  const { user, companyId, isLoading: isAuthLoading, isVendedor, isSuperAdmin } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const userName = user?.user_metadata?.full_name || "consultor";
@@ -73,11 +73,11 @@ const WhatsAppFAB = () => {
           .order("full_name")
           .limit(200);
 
-        if (companyId) {
+        if (!isSuperAdmin && companyId) {
           query = query.eq("company_id", companyId);
         }
 
-        if (isVendedor && user) {
+        if (isVendedor && !isSuperAdmin && user) {
           query = query.eq("created_by", user.id);
         }
 
