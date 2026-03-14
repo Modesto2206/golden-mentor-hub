@@ -56,13 +56,17 @@ const GoalsTrackingPanel = () => {
   const { data: sales = [] } = useQuery({
     queryKey: ["goals-tracking-sales", companyId, currentMonth, currentYear],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select("seller_id, released_value, commission_value, status, sale_date");
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
     staleTime: 1000 * 60 * 2,
   });
 

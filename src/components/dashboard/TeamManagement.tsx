@@ -34,21 +34,26 @@ const roleLabels: Record<string, string> = {
 };
 
 const TeamManagement = () => {
-  const { user, isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin, companyId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const { data: members = [], isLoading } = useQuery({
-    queryKey: ["team-members"],
+    queryKey: ["team-members", companyId],
     queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
+      let profilesQuery = supabase
         .from("profiles")
         .select("user_id, full_name, email, is_active")
         .eq("is_active", true)
         .order("full_name");
 
+      if (companyId && !isSuperAdmin) {
+        profilesQuery = profilesQuery.eq("company_id", companyId);
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQuery;
       if (profilesError) throw profilesError;
 
       const { data: roles, error: rolesError } = await supabase
@@ -64,7 +69,7 @@ const TeamManagement = () => {
         role: roleMap.get(p.user_id) || "vendedor",
       })) as TeamMember[];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const handleRemove = async (userId: string) => {

@@ -8,7 +8,7 @@ import { DollarSign, TrendingUp, Users, BarChart3, ArrowUpRight, ArrowDownRight 
 import AppLayout from "@/components/AppLayout";
 
 const FinancialReport = () => {
-  const { user } = useAuth();
+  const { user, companyId, isSuperAdmin } = useAuth();
 
   const now = new Date();
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
