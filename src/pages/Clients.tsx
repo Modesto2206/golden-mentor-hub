@@ -432,6 +432,7 @@ const ClientsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ClientImportDialog open={importOpen} onOpenChange={setImportOpen} />
       {attachClient && (
         <ClientAttachmentsDialog
           open={!!attachClient}
