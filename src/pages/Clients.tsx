@@ -235,9 +235,14 @@ const ClientsPage = () => {
             <h1 className="text-2xl font-bold text-gold-gradient">Clientes</h1>
             <p className="text-sm text-muted-foreground">{totalCount} clientes cadastrados</p>
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />Novo Cliente
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />Importar
+            </Button>
+            <Button onClick={() => setAddOpen(true)}>
+              <UserPlus className="w-4 h-4 mr-2" />Novo Cliente
+            </Button>
+          </div>
         </div>
 
         {/* Search & Filters */}
