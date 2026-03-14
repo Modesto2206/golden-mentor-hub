@@ -215,7 +215,20 @@ const WhatsAppFAB = () => {
             />
           </div>
           <div className="relative flex-1">
-            <ScrollArea ref={scrollRef} className="max-h-[340px]" onScrollCapture={checkScroll}>
+            {showScrollUp && (
+              <button
+                onClick={scrollUp}
+                className="absolute top-1 left-1/2 -translate-x-1/2 z-10 w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity"
+                title="Rolar para cima"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+            )}
+            <div
+              ref={scrollContainerRef}
+              className="max-h-[340px] overflow-y-auto"
+              onScroll={checkScroll}
+            >
               {loading ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">Carregando...</div>
               ) : filtered.length === 0 ? (
@@ -242,11 +255,11 @@ const WhatsAppFAB = () => {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
             {showScrollDown && (
               <button
                 onClick={scrollDown}
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity animate-bounce"
+                className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity animate-bounce"
                 title="Rolar para baixo"
               >
                 <ChevronDown className="w-4 h-4" />
