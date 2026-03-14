@@ -16,17 +16,21 @@ const FinancialReport = () => {
   const currMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const { data: prevSales = [] } = useQuery({
-    queryKey: ["financial-report-prev", prevMonth.toISOString()],
+    queryKey: ["financial-report-prev", prevMonth.toISOString(), companyId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("sales")
         .select("*")
         .gte("sale_date", prevMonth.toISOString().split("T")[0])
         .lte("sale_date", prevMonthEnd.toISOString().split("T")[0]);
+      if (companyId && !isSuperAdmin) {
+        query = query.eq("company_id", companyId);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!user,
+    enabled: !!user && !!companyId,
   });
 
   const { data: currSales = [] } = useQuery({
