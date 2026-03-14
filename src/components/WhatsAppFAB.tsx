@@ -42,7 +42,7 @@ const WhatsAppFAB = () => {
   const [showScrollDown, setShowScrollDown] = useState(false);
   const [showScrollUp, setShowScrollUp] = useState(false);
   const { user, companyId, isLoading: isAuthLoading, isVendedor, isSuperAdmin } = useAuth();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  
 
   const userName = user?.user_metadata?.full_name || "consultor";
 
