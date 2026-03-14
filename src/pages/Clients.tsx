@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Paperclip } from "lucide-react";
+import { Search, UserPlus, MessageCircle, Pencil, Trash2, Loader2, Paperclip, Upload } from "lucide-react";
 import { useProfiles } from "@/hooks/useProfiles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
