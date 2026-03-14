@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { MessageCircle, X, Search, ExternalLink, ChevronDown } from "lucide-react";
+import { MessageCircle, X, Search, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 interface ClientContact {
   id: string;
@@ -40,8 +40,9 @@ const WhatsAppFAB = () => {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [showScrollDown, setShowScrollDown] = useState(false);
+  const [showScrollUp, setShowScrollUp] = useState(false);
   const { user, companyId, isLoading: isAuthLoading, isVendedor, isSuperAdmin } = useAuth();
-  const scrollRef = useRef<HTMLDivElement>(null);
+  
 
   const userName = user?.user_metadata?.full_name || "consultor";
 
@@ -114,42 +115,29 @@ const WhatsAppFAB = () => {
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
-  // Scroll indicator logic
-  const getViewport = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return null;
-    return el.querySelector("[data-radix-scroll-area-viewport]") as HTMLElement | null;
-  }, []);
+  // Scroll indicator logic - use direct ref to the scrollable div
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const checkScroll = useCallback(() => {
-    const viewport = getViewport();
-    if (!viewport) return;
-    setShowScrollDown(viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight > 40);
-  }, [getViewport]);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setShowScrollDown(el.scrollHeight - el.scrollTop - el.clientHeight > 20);
+    setShowScrollUp(el.scrollTop > 20);
+  }, []);
 
   const scrollDown = useCallback(() => {
-    const viewport = getViewport();
-    if (!viewport) return;
-    viewport.scrollBy({ top: 200, behavior: "smooth" });
-  }, [getViewport]);
+    scrollContainerRef.current?.scrollBy({ top: 150, behavior: "smooth" });
+  }, []);
+
+  const scrollUp = useCallback(() => {
+    scrollContainerRef.current?.scrollBy({ top: -150, behavior: "smooth" });
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    const timer = setTimeout(() => {
-      checkScroll();
-      const viewport = getViewport();
-      if (viewport) {
-        viewport.addEventListener("scroll", checkScroll);
-      }
-    }, 200);
-    return () => {
-      clearTimeout(timer);
-      const viewport = getViewport();
-      if (viewport) {
-        viewport.removeEventListener("scroll", checkScroll);
-      }
-    };
-  }, [isOpen, filtered, checkScroll, getViewport]);
+    const timer = setTimeout(checkScroll, 200);
+    return () => clearTimeout(timer);
+  }, [isOpen, filtered, checkScroll]);
 
   // Drag handlers
   const onPointerDown = useCallback((e: React.PointerEvent) => {
@@ -227,7 +215,20 @@ const WhatsAppFAB = () => {
             />
           </div>
           <div className="relative flex-1">
-            <ScrollArea ref={scrollRef} className="max-h-[340px]" onScrollCapture={checkScroll}>
+            {showScrollUp && (
+              <button
+                onClick={scrollUp}
+                className="absolute top-1 left-1/2 -translate-x-1/2 z-10 w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity"
+                title="Rolar para cima"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+            )}
+            <div
+              ref={scrollContainerRef}
+              className="max-h-[340px] overflow-y-auto"
+              onScroll={checkScroll}
+            >
               {loading ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">Carregando...</div>
               ) : filtered.length === 0 ? (
@@ -254,11 +255,11 @@ const WhatsAppFAB = () => {
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
             {showScrollDown && (
               <button
                 onClick={scrollDown}
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity animate-bounce"
+                className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 w-7 h-7 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center hover:opacity-90 transition-opacity animate-bounce"
                 title="Rolar para baixo"
               >
                 <ChevronDown className="w-4 h-4" />
