@@ -53,7 +53,7 @@ const ClientsPage = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [attachClient, setAttachClient] = useState<{ id: string; name: string } | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
+  
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", user?.id, companyId, isSuperAdmin, page, debouncedSearch, filterConvenio, filterModalidade, filterStatus],
