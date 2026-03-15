@@ -17,7 +17,7 @@ import {
 import AppLayout from "@/components/AppLayout";
 import ClientFormDialog, { formatPhone, formatCPF, type ClientFormData } from "@/components/clients/ClientFormDialog";
 import ClientAttachmentsDialog from "@/components/clients/ClientAttachmentsDialog";
-import ClientImportDialog from "@/components/clients/ClientImportDialog";
+
 
 const ClientsPage = () => {
   const { companyId, isAdmin, isSuperAdmin, user, isLoading: isAuthLoading } = useAuth();
