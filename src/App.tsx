@@ -77,6 +77,7 @@ const App = () => (
                   <Route path="/super-admin" element={<SafeRoute><SuperAdminDashboard /></SafeRoute>} />
                   <Route path="/configuracoes" element={<SafeRoute><CompanySettingsPage /></SafeRoute>} />
                   <Route path="/whatsapp" element={<SafeRoute><WhatsAppPanel /></SafeRoute>} />
+                  <Route path="/leads" element={<SafeRoute><LeadsPage /></SafeRoute>} />
                   <Route path="*" element={<SafeRoute><NotFound /></SafeRoute>} />
                 </Routes>
               </Suspense>

@@ -33,6 +33,7 @@ const navItems: NavItem[] = [
   { label: "Propostas", icon: <FileText className="w-5 h-5" />, href: "/propostas" },
   { label: "Nova Proposta", icon: <PlusCircle className="w-5 h-5" />, href: "/propostas/nova" },
   { label: "Clientes", icon: <Users className="w-5 h-5" />, href: "/clientes" },
+  { label: "Leads", icon: <Upload className="w-5 h-5" />, href: "/leads" },
   { label: "Bancos", icon: <Landmark className="w-5 h-5" />, href: "/bancos" },
   { label: "Relatório", icon: <BarChart3 className="w-5 h-5" />, href: "/relatorio", roles: ["administrador", "raiz", "admin_global", "admin_empresa", "gerente", "financeiro"] },
   { label: "Loja", icon: <ShoppingBag className="w-5 h-5" />, href: "/loja" },
