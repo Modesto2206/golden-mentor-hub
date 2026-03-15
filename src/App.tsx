@@ -25,6 +25,7 @@ const CreateCompany = lazy(() => import("./pages/CreateCompany"));
 const FinancialReport = lazy(() => import("./pages/FinancialReport"));
 const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const WhatsAppPanel = lazy(() => import("./pages/WhatsAppPanel"));
+const LeadsPage = lazy(() => import("./pages/Leads"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
