@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Upload, UserRoundSearch, FileSpreadsheet, Search, ArrowRightLeft, Trash2, Eye } from "lucide-react";
+import { Upload, UserRoundSearch, FileSpreadsheet, Search, ArrowRightLeft, Trash2, Eye, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,7 +14,8 @@ import { useLeads, PIPELINE_STAGES } from "@/hooks/useLeads";
 const LeadsPage = () => {
   const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const { leads, isLoading, convertToClient, isConverting, deleteLead } = useLeads();
+  const [confirmDeleteImported, setConfirmDeleteImported] = useState(false);
+  const { leads, isLoading, convertToClient, isConverting, deleteLead, deleteImportedLeads, isDeletingImported, importedCount } = useLeads();
 
   const filteredLeads = useMemo(() => {
     if (!search) return leads;
@@ -36,10 +38,18 @@ const LeadsPage = () => {
             <h1 className="text-2xl font-bold text-gold-gradient">Leads</h1>
             <p className="text-sm text-muted-foreground">Gerencie seus leads e importe em massa</p>
           </div>
-          <Button onClick={() => setImportOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Importar Planilha
-          </Button>
+          <div className="flex gap-2">
+            {importedCount > 0 && (
+              <Button variant="destructive" onClick={() => setConfirmDeleteImported(true)} disabled={isDeletingImported}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir Importados ({importedCount})
+              </Button>
+            )}
+            <Button onClick={() => setImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Planilha
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -142,6 +152,29 @@ const LeadsPage = () => {
       </div>
 
       <LeadImportDialog open={importOpen} onOpenChange={setImportOpen} />
+
+      <AlertDialog open={confirmDeleteImported} onOpenChange={setConfirmDeleteImported}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Excluir todos os leads importados?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá remover permanentemente <strong>{importedCount}</strong> leads que foram adicionados via importação de planilha. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteImportedLeads()}
+            >
+              Sim, excluir todos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 };

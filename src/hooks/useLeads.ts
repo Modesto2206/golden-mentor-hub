@@ -156,6 +156,54 @@ export function useLeads() {
     },
   });
 
+  const deleteImportedMutation = useMutation({
+    mutationFn: async () => {
+      // Delete in batches to avoid timeout
+      const PAGE = 500;
+      let deleted = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        let query = (supabase.from("leads" as any) as any)
+          .select("id")
+          .eq("source", "importacao")
+          .limit(PAGE);
+
+        if (companyId && !isSuperAdmin) {
+          query = query.eq("company_id", companyId);
+        }
+
+        const { data, error: fetchError } = await query;
+        if (fetchError) throw fetchError;
+
+        const ids = ((data || []) as { id: string }[]).map((r) => r.id);
+        if (ids.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        const { error } = await (supabase.from("leads" as any) as any)
+          .delete()
+          .in("id", ids);
+        if (error) throw error;
+
+        deleted += ids.length;
+        hasMore = ids.length === PAGE;
+      }
+
+      return deleted;
+    },
+    onSuccess: (deleted) => {
+      queryClient.invalidateQueries({ queryKey: ["leads"] });
+      toast({ title: `${deleted} leads importados removidos com sucesso!` });
+    },
+    onError: (error: any) => {
+      toast({ variant: "destructive", title: "Erro ao remover leads importados", description: error.message });
+    },
+  });
+
+  const importedCount = (leadsQuery.data || []).filter((l) => l.source === "importacao").length;
+
   return {
     leads: leadsQuery.data || [],
     isLoading: leadsQuery.isLoading,
@@ -163,5 +211,8 @@ export function useLeads() {
     convertToClient: convertToClientMutation.mutate,
     isConverting: convertToClientMutation.isPending,
     deleteLead: deleteMutation.mutate,
+    deleteImportedLeads: deleteImportedMutation.mutate,
+    isDeletingImported: deleteImportedMutation.isPending,
+    importedCount,
   };
 }
