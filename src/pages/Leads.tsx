@@ -13,7 +13,8 @@ import { useLeads, PIPELINE_STAGES } from "@/hooks/useLeads";
 const LeadsPage = () => {
   const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const { leads, isLoading, convertToClient, isConverting, deleteLead } = useLeads();
+  const [confirmDeleteImported, setConfirmDeleteImported] = useState(false);
+  const { leads, isLoading, convertToClient, isConverting, deleteLead, deleteImportedLeads, isDeletingImported, importedCount } = useLeads();
 
   const filteredLeads = useMemo(() => {
     if (!search) return leads;
