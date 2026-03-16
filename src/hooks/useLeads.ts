@@ -43,12 +43,24 @@ export function useLeads() {
   const leadsQuery = useQuery({
     queryKey: ["leads", companyId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("leads" as any) as any)
-        .select("*")
-        .eq("company_id", companyId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as Lead[];
+      // Fetch in pages of 1000 to overcome Supabase default limit
+      const allLeads: Lead[] = [];
+      let from = 0;
+      const PAGE = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data, error } = await (supabase.from("leads" as any) as any)
+          .select("*")
+          .eq("company_id", companyId)
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const rows = (data || []) as Lead[];
+        allLeads.push(...rows);
+        hasMore = rows.length === PAGE;
+        from += PAGE;
+      }
+      return allLeads;
     },
     enabled: !isAuthLoading && !!companyId,
   });
