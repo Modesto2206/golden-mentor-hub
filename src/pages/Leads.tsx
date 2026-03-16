@@ -38,10 +38,18 @@ const LeadsPage = () => {
             <h1 className="text-2xl font-bold text-gold-gradient">Leads</h1>
             <p className="text-sm text-muted-foreground">Gerencie seus leads e importe em massa</p>
           </div>
-          <Button onClick={() => setImportOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Importar Planilha
-          </Button>
+          <div className="flex gap-2">
+            {importedCount > 0 && (
+              <Button variant="destructive" onClick={() => setConfirmDeleteImported(true)} disabled={isDeletingImported}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir Importados ({importedCount})
+              </Button>
+            )}
+            <Button onClick={() => setImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Planilha
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
