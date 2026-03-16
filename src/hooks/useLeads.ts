@@ -41,28 +41,35 @@ export function useLeads() {
   const queryClient = useQueryClient();
 
   const leadsQuery = useQuery({
-    queryKey: ["leads", companyId],
+    queryKey: ["leads", companyId, user?.id],
     queryFn: async () => {
-      // Fetch in pages of 1000 to overcome Supabase default limit
-      const allLeads: Lead[] = [];
-      let from = 0;
       const PAGE = 1000;
+      let from = 0;
       let hasMore = true;
+      const allLeads: Lead[] = [];
+
       while (hasMore) {
-        const { data, error } = await (supabase.from("leads" as any) as any)
+        let query = (supabase.from("leads" as any) as any)
           .select("*")
-          .eq("company_id", companyId)
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
+
+        if (companyId) {
+          query = query.eq("company_id", companyId);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
+
         const rows = (data || []) as Lead[];
         allLeads.push(...rows);
         hasMore = rows.length === PAGE;
         from += PAGE;
       }
+
       return allLeads;
     },
-    enabled: !isAuthLoading && !!companyId,
+    enabled: !isAuthLoading && !!user,
   });
 
   const updateStageMutation = useMutation({
