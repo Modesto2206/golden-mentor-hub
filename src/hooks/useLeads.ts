@@ -36,7 +36,7 @@ export const PIPELINE_STAGES = [
 export type PipelineStage = typeof PIPELINE_STAGES[number]["key"];
 
 export function useLeads() {
-  const { companyId, user, isAuthLoading } = useAuth();
+  const { companyId, user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
