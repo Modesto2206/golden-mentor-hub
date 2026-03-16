@@ -55,7 +55,8 @@ export function useLeads() {
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
 
-        if (companyId) {
+        // Super admins see all leads across companies; others filter by their company
+        if (companyId && !isSuperAdmin) {
           query = query.eq("company_id", companyId);
         }
 
