@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+
 export interface Lead {
   id: string;
   company_id: string;
@@ -36,7 +37,7 @@ export const PIPELINE_STAGES = [
 export type PipelineStage = typeof PIPELINE_STAGES[number]["key"];
 
 export function useLeads() {
-  const { companyId, user, isLoading: isAuthLoading } = useAuth();
+  const { companyId, user, isLoading: isAuthLoading, isSuperAdmin } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -54,7 +55,8 @@ export function useLeads() {
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
 
-        if (companyId) {
+        // Super admins see all leads across companies; others filter by their company
+        if (companyId && !isSuperAdmin) {
           query = query.eq("company_id", companyId);
         }
 
