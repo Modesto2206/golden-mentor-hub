@@ -6,8 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
-  Plus, Search, Download, Trash2, Edit, Send
+  Plus, Search, Download, Trash2, Edit, Send, FileText
 } from "lucide-react";
+import { generateProposalPDF } from "@/lib/generateProposalPDF";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -109,7 +110,7 @@ const ProposalsPage = () => {
     queryKey: ["proposals", companyId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("proposals" as any) as any)
-        .select("id, client_id, bank_id, seller_id, modality, requested_value, released_value, internal_status, bank_status, created_at, protocolo_banco, erro_banco, external_proposal_id, clients(full_name, cpf), banks(name, possui_api)")
+        .select("id, client_id, bank_id, seller_id, modality, covenant, requested_value, released_value, approved_value, interest_rate, term_months, installment_value, internal_status, bank_status, created_at, protocolo_banco, erro_banco, external_proposal_id, observations, bank_agency, bank_account, bank_account_type, pix_key, clients(full_name, cpf, phone, email), banks(name, possui_api)")
         .eq("company_id", companyId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -303,6 +304,11 @@ const ProposalsPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            title="Gerar PDF"
+                            onClick={() => generateProposalPDF(p)}>
+                            <FileText className="w-3.5 h-3.5" />
+                          </Button>
                           {canEditProposal(p) && (
                             <Button variant="ghost" size="icon" className="h-7 w-7"
                               onClick={() => { setEditProposal(p); setEditStatus(p.internal_status); }}>
