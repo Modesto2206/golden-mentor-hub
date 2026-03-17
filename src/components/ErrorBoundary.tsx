@@ -60,6 +60,16 @@ class ErrorBoundary extends Component<Props, State> {
                 ? "Houve um problema de conexão ao carregar esta página. Tente recarregar."
                 : "Ocorreu um erro inesperado. Tente novamente ou recarregue a página."}
             </p>
+            {this.state.error && (
+              <details className="mt-3 text-left text-xs text-muted-foreground/70">
+                <summary className="cursor-pointer hover:text-muted-foreground">Detalhes do erro</summary>
+                <pre className="mt-2 p-2 bg-muted/50 rounded overflow-auto max-h-40 whitespace-pre-wrap break-words">
+                  {this.state.error.message}
+                  {"\n\n"}
+                  {this.state.error.stack}
+                </pre>
+              </details>
+            )}
             <div className="flex gap-3 justify-center">
               <button
                 onClick={this.handleRetry}
