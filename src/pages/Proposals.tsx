@@ -6,8 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
-  Plus, Search, Download, Trash2, Edit, Send
+  Plus, Search, Download, Trash2, Edit, Send, FileText
 } from "lucide-react";
+import { generateProposalPDF } from "@/lib/generateProposalPDF";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
