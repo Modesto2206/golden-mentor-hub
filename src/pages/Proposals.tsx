@@ -304,6 +304,11 @@ const ProposalsPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            title="Gerar PDF"
+                            onClick={() => generateProposalPDF(p)}>
+                            <FileText className="w-3.5 h-3.5" />
+                          </Button>
                           {canEditProposal(p) && (
                             <Button variant="ghost" size="icon" className="h-7 w-7"
                               onClick={() => { setEditProposal(p); setEditStatus(p.internal_status); }}>
