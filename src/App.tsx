@@ -27,6 +27,7 @@ const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const WhatsAppPanel = lazy(() => import("./pages/WhatsAppPanel"));
 const LeadsPage = lazy(() => import("./pages/Leads"));
 const PipelinePage = lazy(() => import("./pages/Pipeline"));
+const CRMLandingPage = lazy(() => import("./pages/CRMLanding"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
