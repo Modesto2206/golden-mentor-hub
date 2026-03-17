@@ -81,6 +81,7 @@ const App = () => (
                   <Route path="/whatsapp" element={<SafeRoute><WhatsAppPanel /></SafeRoute>} />
                   <Route path="/leads" element={<SafeRoute><LeadsPage /></SafeRoute>} />
                   <Route path="/pipeline" element={<SafeRoute><PipelinePage /></SafeRoute>} />
+                  <Route path="/crm" element={<SafeRoute><CRMLandingPage /></SafeRoute>} />
                   <Route path="*" element={<SafeRoute><NotFound /></SafeRoute>} />
                 </Routes>
               </Suspense>
